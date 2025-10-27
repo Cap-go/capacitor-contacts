@@ -56,13 +56,19 @@ npx cap sync
 <docgen-api>
 <!--Update the source file JSDoc comments and rerun docgen to update the docs below-->
 
+Capacitor Contacts Plugin interface for managing device contacts.
+
 ### countContacts()
 
 ```typescript
 countContacts() => Promise<CountContactsResult>
 ```
 
+Count the total number of contacts on the device.
+
 **Returns:** <code>Promise&lt;<a href="#countcontactsresult">CountContactsResult</a>&gt;</code>
+
+**Since:** 1.0.0
 
 --------------------
 
@@ -73,11 +79,15 @@ countContacts() => Promise<CountContactsResult>
 createContact(options: CreateContactOptions) => Promise<CreateContactResult>
 ```
 
-| Param         | Type                                                                  |
-| ------------- | --------------------------------------------------------------------- |
-| **`options`** | <code><a href="#createcontactoptions">CreateContactOptions</a></code> |
+Create a new contact programmatically.
+
+| Param         | Type                                                                  | Description                         |
+| ------------- | --------------------------------------------------------------------- | ----------------------------------- |
+| **`options`** | <code><a href="#createcontactoptions">CreateContactOptions</a></code> | - The contact information to create |
 
 **Returns:** <code>Promise&lt;<a href="#createcontactresult">CreateContactResult</a>&gt;</code>
+
+**Since:** 1.0.0
 
 --------------------
 
@@ -88,11 +98,15 @@ createContact(options: CreateContactOptions) => Promise<CreateContactResult>
 createGroup(options: CreateGroupOptions) => Promise<CreateGroupResult>
 ```
 
-| Param         | Type                                                              |
-| ------------- | ----------------------------------------------------------------- |
-| **`options`** | <code><a href="#creategroupoptions">CreateGroupOptions</a></code> |
+Create a new contact group.
+
+| Param         | Type                                                              | Description                       |
+| ------------- | ----------------------------------------------------------------- | --------------------------------- |
+| **`options`** | <code><a href="#creategroupoptions">CreateGroupOptions</a></code> | - The group information to create |
 
 **Returns:** <code>Promise&lt;<a href="#creategroupresult">CreateGroupResult</a>&gt;</code>
+
+**Since:** 1.0.0
 
 --------------------
 
@@ -103,9 +117,13 @@ createGroup(options: CreateGroupOptions) => Promise<CreateGroupResult>
 deleteContactById(options: DeleteContactByIdOptions) => Promise<void>
 ```
 
-| Param         | Type                                                                          |
-| ------------- | ----------------------------------------------------------------------------- |
-| **`options`** | <code><a href="#deletecontactbyidoptions">DeleteContactByIdOptions</a></code> |
+Delete a contact by ID.
+
+| Param         | Type                                                                          | Description                       |
+| ------------- | ----------------------------------------------------------------------------- | --------------------------------- |
+| **`options`** | <code><a href="#deletecontactbyidoptions">DeleteContactByIdOptions</a></code> | - The ID of the contact to delete |
+
+**Since:** 1.0.0
 
 --------------------
 
@@ -116,9 +134,13 @@ deleteContactById(options: DeleteContactByIdOptions) => Promise<void>
 deleteGroupById(options: DeleteGroupByIdOptions) => Promise<void>
 ```
 
-| Param         | Type                                                                      |
-| ------------- | ------------------------------------------------------------------------- |
-| **`options`** | <code><a href="#deletegroupbyidoptions">DeleteGroupByIdOptions</a></code> |
+Delete a group by ID.
+
+| Param         | Type                                                                      | Description                     |
+| ------------- | ------------------------------------------------------------------------- | ------------------------------- |
+| **`options`** | <code><a href="#deletegroupbyidoptions">DeleteGroupByIdOptions</a></code> | - The ID of the group to delete |
+
+**Since:** 1.0.0
 
 --------------------
 
@@ -129,9 +151,13 @@ deleteGroupById(options: DeleteGroupByIdOptions) => Promise<void>
 displayContactById(options: DisplayContactByIdOptions) => Promise<void>
 ```
 
-| Param         | Type                                                                            |
-| ------------- | ------------------------------------------------------------------------------- |
-| **`options`** | <code><a href="#displaycontactbyidoptions">DisplayContactByIdOptions</a></code> |
+Display a contact using the native contact viewer.
+
+| Param         | Type                                                                            | Description                        |
+| ------------- | ------------------------------------------------------------------------------- | ---------------------------------- |
+| **`options`** | <code><a href="#displaycontactbyidoptions">DisplayContactByIdOptions</a></code> | - The ID of the contact to display |
+
+**Since:** 1.0.0
 
 --------------------
 
@@ -142,11 +168,15 @@ displayContactById(options: DisplayContactByIdOptions) => Promise<void>
 displayCreateContact(options?: DisplayCreateContactOptions | undefined) => Promise<DisplayCreateContactResult>
 ```
 
-| Param         | Type                                                                                |
-| ------------- | ----------------------------------------------------------------------------------- |
-| **`options`** | <code><a href="#displaycreatecontactoptions">DisplayCreateContactOptions</a></code> |
+Display the native create contact UI.
+
+| Param         | Type                                                                                | Description                               |
+| ------------- | ----------------------------------------------------------------------------------- | ----------------------------------------- |
+| **`options`** | <code><a href="#displaycreatecontactoptions">DisplayCreateContactOptions</a></code> | - Optional pre-filled contact information |
 
 **Returns:** <code>Promise&lt;<a href="#displaycreatecontactresult">DisplayCreateContactResult</a>&gt;</code>
+
+**Since:** 1.0.0
 
 --------------------
 
@@ -157,9 +187,13 @@ displayCreateContact(options?: DisplayCreateContactOptions | undefined) => Promi
 displayUpdateContactById(options: DisplayUpdateContactByIdOptions) => Promise<void>
 ```
 
-| Param         | Type                                                                                        |
-| ------------- | ------------------------------------------------------------------------------------------- |
-| **`options`** | <code><a href="#displayupdatecontactbyidoptions">DisplayUpdateContactByIdOptions</a></code> |
+Display the native update contact UI for a specific contact.
+
+| Param         | Type                                                                                        | Description                       |
+| ------------- | ------------------------------------------------------------------------------------------- | --------------------------------- |
+| **`options`** | <code><a href="#displayupdatecontactbyidoptions">DisplayUpdateContactByIdOptions</a></code> | - The ID of the contact to update |
+
+**Since:** 1.0.0
 
 --------------------
 
@@ -170,7 +204,11 @@ displayUpdateContactById(options: DisplayUpdateContactByIdOptions) => Promise<vo
 getAccounts() => Promise<GetAccountsResult>
 ```
 
+Get all accounts available on the device.
+
 **Returns:** <code>Promise&lt;<a href="#getaccountsresult">GetAccountsResult</a>&gt;</code>
+
+**Since:** 1.0.0
 
 --------------------
 
@@ -181,11 +219,15 @@ getAccounts() => Promise<GetAccountsResult>
 getContactById(options: GetContactByIdOptions) => Promise<GetContactByIdResult>
 ```
 
-| Param         | Type                                                                    |
-| ------------- | ----------------------------------------------------------------------- |
-| **`options`** | <code><a href="#getcontactbyidoptions">GetContactByIdOptions</a></code> |
+Get a specific contact by ID.
+
+| Param         | Type                                                                    | Description                              |
+| ------------- | ----------------------------------------------------------------------- | ---------------------------------------- |
+| **`options`** | <code><a href="#getcontactbyidoptions">GetContactByIdOptions</a></code> | - The ID and optional fields to retrieve |
 
 **Returns:** <code>Promise&lt;<a href="#getcontactbyidresult">GetContactByIdResult</a>&gt;</code>
+
+**Since:** 1.0.0
 
 --------------------
 
@@ -196,11 +238,15 @@ getContactById(options: GetContactByIdOptions) => Promise<GetContactByIdResult>
 getContacts(options?: GetContactsOptions | undefined) => Promise<GetContactsResult>
 ```
 
-| Param         | Type                                                              |
-| ------------- | ----------------------------------------------------------------- |
-| **`options`** | <code><a href="#getcontactsoptions">GetContactsOptions</a></code> |
+Get all contacts from the device.
+
+| Param         | Type                                                              | Description                               |
+| ------------- | ----------------------------------------------------------------- | ----------------------------------------- |
+| **`options`** | <code><a href="#getcontactsoptions">GetContactsOptions</a></code> | - Optional filters and pagination options |
 
 **Returns:** <code>Promise&lt;<a href="#getcontactsresult">GetContactsResult</a>&gt;</code>
+
+**Since:** 1.0.0
 
 --------------------
 
@@ -211,11 +257,15 @@ getContacts(options?: GetContactsOptions | undefined) => Promise<GetContactsResu
 getGroupById(options: GetGroupByIdOptions) => Promise<GetGroupByIdResult>
 ```
 
-| Param         | Type                                                                |
-| ------------- | ------------------------------------------------------------------- |
-| **`options`** | <code><a href="#getgroupbyidoptions">GetGroupByIdOptions</a></code> |
+Get a specific group by ID.
+
+| Param         | Type                                                                | Description                       |
+| ------------- | ------------------------------------------------------------------- | --------------------------------- |
+| **`options`** | <code><a href="#getgroupbyidoptions">GetGroupByIdOptions</a></code> | - The ID of the group to retrieve |
 
 **Returns:** <code>Promise&lt;<a href="#getgroupbyidresult">GetGroupByIdResult</a>&gt;</code>
+
+**Since:** 1.0.0
 
 --------------------
 
@@ -226,7 +276,11 @@ getGroupById(options: GetGroupByIdOptions) => Promise<GetGroupByIdResult>
 getGroups() => Promise<GetGroupsResult>
 ```
 
+Get all contact groups.
+
 **Returns:** <code>Promise&lt;<a href="#getgroupsresult">GetGroupsResult</a>&gt;</code>
+
+**Since:** 1.0.0
 
 --------------------
 
@@ -237,7 +291,11 @@ getGroups() => Promise<GetGroupsResult>
 isAvailable() => Promise<IsAvailableResult>
 ```
 
+Check if contacts are available on the device.
+
 **Returns:** <code>Promise&lt;<a href="#isavailableresult">IsAvailableResult</a>&gt;</code>
+
+**Since:** 1.0.0
 
 --------------------
 
@@ -248,7 +306,11 @@ isAvailable() => Promise<IsAvailableResult>
 isSupported() => Promise<IsSupportedResult>
 ```
 
+Check if the plugin is supported on the current platform.
+
 **Returns:** <code>Promise&lt;<a href="#issupportedresult">IsSupportedResult</a>&gt;</code>
+
+**Since:** 1.0.0
 
 --------------------
 
@@ -259,6 +321,10 @@ isSupported() => Promise<IsSupportedResult>
 openSettings() => Promise<void>
 ```
 
+Open the device's contacts settings.
+
+**Since:** 1.0.0
+
 --------------------
 
 
@@ -268,11 +334,15 @@ openSettings() => Promise<void>
 pickContact(options?: PickContactsOptions | undefined) => Promise<PickContactResult>
 ```
 
-| Param         | Type                                                                |
-| ------------- | ------------------------------------------------------------------- |
-| **`options`** | <code><a href="#pickcontactsoptions">PickContactsOptions</a></code> |
+<a href="#pick">Pick</a> a single contact using the native contact picker.
+
+| Param         | Type                                                                | Description                                            |
+| ------------- | ------------------------------------------------------------------- | ------------------------------------------------------ |
+| **`options`** | <code><a href="#pickcontactsoptions">PickContactsOptions</a></code> | - Optional fields to retrieve and picker configuration |
 
 **Returns:** <code>Promise&lt;<a href="#pickcontactsresult">PickContactsResult</a>&gt;</code>
+
+**Since:** 1.0.0
 
 --------------------
 
@@ -283,11 +353,15 @@ pickContact(options?: PickContactsOptions | undefined) => Promise<PickContactRes
 pickContacts(options?: PickContactsOptions | undefined) => Promise<PickContactsResult>
 ```
 
-| Param         | Type                                                                |
-| ------------- | ------------------------------------------------------------------- |
-| **`options`** | <code><a href="#pickcontactsoptions">PickContactsOptions</a></code> |
+<a href="#pick">Pick</a> one or more contacts using the native contact picker.
+
+| Param         | Type                                                                | Description                                            |
+| ------------- | ------------------------------------------------------------------- | ------------------------------------------------------ |
+| **`options`** | <code><a href="#pickcontactsoptions">PickContactsOptions</a></code> | - Optional fields to retrieve and picker configuration |
 
 **Returns:** <code>Promise&lt;<a href="#pickcontactsresult">PickContactsResult</a>&gt;</code>
+
+**Since:** 1.0.0
 
 --------------------
 
@@ -298,9 +372,13 @@ pickContacts(options?: PickContactsOptions | undefined) => Promise<PickContactsR
 updateContactById(options: UpdateContactByIdOptions) => Promise<void>
 ```
 
-| Param         | Type                                                                          |
-| ------------- | ----------------------------------------------------------------------------- |
-| **`options`** | <code><a href="#updatecontactbyidoptions">UpdateContactByIdOptions</a></code> |
+Update an existing contact by ID.
+
+| Param         | Type                                                                          | Description                              |
+| ------------- | ----------------------------------------------------------------------------- | ---------------------------------------- |
+| **`options`** | <code><a href="#updatecontactbyidoptions">UpdateContactByIdOptions</a></code> | - The ID and updated contact information |
+
+**Since:** 1.0.0
 
 --------------------
 
@@ -311,7 +389,11 @@ updateContactById(options: UpdateContactByIdOptions) => Promise<void>
 checkPermissions() => Promise<PermissionStatus>
 ```
 
+Check the current permission status for contacts.
+
 **Returns:** <code>Promise&lt;<a href="#permissionstatus">PermissionStatus</a>&gt;</code>
+
+**Since:** 1.0.0
 
 --------------------
 
@@ -322,11 +404,15 @@ checkPermissions() => Promise<PermissionStatus>
 requestPermissions(options?: RequestPermissionsOptions | undefined) => Promise<PermissionStatus>
 ```
 
-| Param         | Type                                                                            |
-| ------------- | ------------------------------------------------------------------------------- |
-| **`options`** | <code><a href="#requestpermissionsoptions">RequestPermissionsOptions</a></code> |
+Request permissions to access contacts.
+
+| Param         | Type                                                                            | Description                                |
+| ------------- | ------------------------------------------------------------------------------- | ------------------------------------------ |
+| **`options`** | <code><a href="#requestpermissionsoptions">RequestPermissionsOptions</a></code> | - Optional specific permissions to request |
 
 **Returns:** <code>Promise&lt;<a href="#permissionstatus">PermissionStatus</a>&gt;</code>
+
+**Since:** 1.0.0
 
 --------------------
 
@@ -351,285 +437,353 @@ Get the native Capacitor plugin version.
 
 #### CountContactsResult
 
-| Prop        | Type                |
-| ----------- | ------------------- |
-| **`count`** | <code>number</code> |
+Result from counting contacts.
+
+| Prop        | Type                | Description               | Since |
+| ----------- | ------------------- | ------------------------- | ----- |
+| **`count`** | <code>number</code> | Total number of contacts. | 1.0.0 |
 
 
 #### CreateContactResult
 
-| Prop     | Type                |
-| -------- | ------------------- |
-| **`id`** | <code>string</code> |
+Result from creating a contact.
+
+| Prop     | Type                | Description                          | Since |
+| -------- | ------------------- | ------------------------------------ | ----- |
+| **`id`** | <code>string</code> | The ID of the newly created contact. | 1.0.0 |
 
 
 #### CreateContactOptions
 
-| Prop          | Type                                                                              |
-| ------------- | --------------------------------------------------------------------------------- |
-| **`contact`** | <code><a href="#omit">Omit</a>&lt;<a href="#contact">Contact</a>, 'id'&gt;</code> |
+Options for creating a contact.
+
+| Prop          | Type                                                                              | Description                                                                                           | Since |
+| ------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ----- |
+| **`contact`** | <code><a href="#omit">Omit</a>&lt;<a href="#contact">Contact</a>, 'id'&gt;</code> | <a href="#contact">Contact</a> information to create. The 'id' field will be generated automatically. | 1.0.0 |
 
 
 #### Contact
 
-| Prop                   | Type                                          |
-| ---------------------- | --------------------------------------------- |
-| **`id`**               | <code>string</code>                           |
-| **`account`**          | <code><a href="#account">Account</a></code>   |
-| **`birthday`**         | <code><a href="#birthday">Birthday</a></code> |
-| **`emailAddresses`**   | <code>EmailAddress[]</code>                   |
-| **`familyName`**       | <code>string</code>                           |
-| **`fullName`**         | <code>string</code>                           |
-| **`givenName`**        | <code>string</code>                           |
-| **`groupIds`**         | <code>string[]</code>                         |
-| **`jobTitle`**         | <code>string</code>                           |
-| **`middleName`**       | <code>string</code>                           |
-| **`namePrefix`**       | <code>string</code>                           |
-| **`nameSuffix`**       | <code>string</code>                           |
-| **`note`**             | <code>string</code>                           |
-| **`organizationName`** | <code>string</code>                           |
-| **`phoneNumbers`**     | <code>PhoneNumber[]</code>                    |
-| **`photo`**            | <code>string</code>                           |
-| **`postalAddresses`**  | <code>PostalAddress[]</code>                  |
-| **`urlAddresses`**     | <code>UrlAddress[]</code>                     |
+<a href="#contact">Contact</a> information.
+
+| Prop                   | Type                                          | Description                                                   | Since |
+| ---------------------- | --------------------------------------------- | ------------------------------------------------------------- | ----- |
+| **`id`**               | <code>string</code>                           | Unique identifier for the contact.                            | 1.0.0 |
+| **`account`**          | <code><a href="#account">Account</a></code>   | <a href="#account">Account</a> information for the contact.   | 1.0.0 |
+| **`birthday`**         | <code><a href="#birthday">Birthday</a></code> | <a href="#birthday">Birthday</a> information for the contact. | 1.0.0 |
+| **`emailAddresses`**   | <code>EmailAddress[]</code>                   | Email addresses for the contact.                              | 1.0.0 |
+| **`familyName`**       | <code>string</code>                           | Family name (last name) of the contact.                       | 1.0.0 |
+| **`fullName`**         | <code>string</code>                           | Full name of the contact.                                     | 1.0.0 |
+| **`givenName`**        | <code>string</code>                           | Given name (first name) of the contact.                       | 1.0.0 |
+| **`groupIds`**         | <code>string[]</code>                         | <a href="#group">Group</a> IDs the contact belongs to.        | 1.0.0 |
+| **`jobTitle`**         | <code>string</code>                           | Job title of the contact.                                     | 1.0.0 |
+| **`middleName`**       | <code>string</code>                           | Middle name of the contact.                                   | 1.0.0 |
+| **`namePrefix`**       | <code>string</code>                           | Name prefix (e.g., "Dr.", "Mr.", "Ms.") of the contact.       | 1.0.0 |
+| **`nameSuffix`**       | <code>string</code>                           | Name suffix (e.g., "Jr.", "Sr.", "III") of the contact.       | 1.0.0 |
+| **`note`**             | <code>string</code>                           | Notes about the contact.                                      | 1.0.0 |
+| **`organizationName`** | <code>string</code>                           | Organization name of the contact.                             | 1.0.0 |
+| **`phoneNumbers`**     | <code>PhoneNumber[]</code>                    | Phone numbers for the contact.                                | 1.0.0 |
+| **`photo`**            | <code>string</code>                           | Base64-encoded photo of the contact.                          | 1.0.0 |
+| **`postalAddresses`**  | <code>PostalAddress[]</code>                  | Postal addresses for the contact.                             | 1.0.0 |
+| **`urlAddresses`**     | <code>UrlAddress[]</code>                     | URL addresses for the contact.                                | 1.0.0 |
 
 
 #### Account
 
-| Prop       | Type                |
-| ---------- | ------------------- |
-| **`name`** | <code>string</code> |
-| **`type`** | <code>string</code> |
+<a href="#account">Account</a> information for a contact.
+
+| Prop       | Type                | Description              | Since |
+| ---------- | ------------------- | ------------------------ | ----- |
+| **`name`** | <code>string</code> | The name of the account. | 1.0.0 |
+| **`type`** | <code>string</code> | The type of the account. | 1.0.0 |
 
 
 #### Birthday
 
-| Prop        | Type                |
-| ----------- | ------------------- |
-| **`day`**   | <code>number</code> |
-| **`month`** | <code>number</code> |
-| **`year`**  | <code>number</code> |
+<a href="#birthday">Birthday</a> information for a contact.
+
+| Prop        | Type                | Description                  | Since |
+| ----------- | ------------------- | ---------------------------- | ----- |
+| **`day`**   | <code>number</code> | The day of the month (1-31). | 1.0.0 |
+| **`month`** | <code>number</code> | The month (1-12).            | 1.0.0 |
+| **`year`**  | <code>number</code> | The year.                    | 1.0.0 |
 
 
 #### EmailAddress
 
-| Prop            | Type                                                          |
-| --------------- | ------------------------------------------------------------- |
-| **`value`**     | <code>string</code>                                           |
-| **`type`**      | <code><a href="#emailaddresstype">EmailAddressType</a></code> |
-| **`label`**     | <code>string</code>                                           |
-| **`isPrimary`** | <code>boolean</code>                                          |
+Email address information for a contact.
+
+| Prop            | Type                                                          | Description                                | Since |
+| --------------- | ------------------------------------------------------------- | ------------------------------------------ | ----- |
+| **`value`**     | <code>string</code>                                           | The email address value.                   | 1.0.0 |
+| **`type`**      | <code><a href="#emailaddresstype">EmailAddressType</a></code> | The type of email address.                 | 1.0.0 |
+| **`label`**     | <code>string</code>                                           | Custom label for the email address.        | 1.0.0 |
+| **`isPrimary`** | <code>boolean</code>                                          | Whether this is the primary email address. | 1.0.0 |
 
 
 #### PhoneNumber
 
-| Prop            | Type                                                        |
-| --------------- | ----------------------------------------------------------- |
-| **`value`**     | <code>string</code>                                         |
-| **`type`**      | <code><a href="#phonenumbertype">PhoneNumberType</a></code> |
-| **`label`**     | <code>string</code>                                         |
-| **`isPrimary`** | <code>boolean</code>                                        |
+Phone number information for a contact.
+
+| Prop            | Type                                                        | Description                               | Since |
+| --------------- | ----------------------------------------------------------- | ----------------------------------------- | ----- |
+| **`value`**     | <code>string</code>                                         | The phone number value.                   | 1.0.0 |
+| **`type`**      | <code><a href="#phonenumbertype">PhoneNumberType</a></code> | The type of phone number.                 | 1.0.0 |
+| **`label`**     | <code>string</code>                                         | Custom label for the phone number.        | 1.0.0 |
+| **`isPrimary`** | <code>boolean</code>                                        | Whether this is the primary phone number. | 1.0.0 |
 
 
 #### PostalAddress
 
-| Prop                 | Type                                                            |
-| -------------------- | --------------------------------------------------------------- |
-| **`city`**           | <code>string</code>                                             |
-| **`country`**        | <code>string</code>                                             |
-| **`formatted`**      | <code>string</code>                                             |
-| **`isoCountryCode`** | <code>string</code>                                             |
-| **`isPrimary`**      | <code>boolean</code>                                            |
-| **`label`**          | <code>string</code>                                             |
-| **`neighborhood`**   | <code>string</code>                                             |
-| **`postalCode`**     | <code>string</code>                                             |
-| **`state`**          | <code>string</code>                                             |
-| **`street`**         | <code>string</code>                                             |
-| **`type`**           | <code><a href="#postaladdresstype">PostalAddressType</a></code> |
+Postal address information for a contact.
+
+| Prop                 | Type                                                            | Description                                 | Since |
+| -------------------- | --------------------------------------------------------------- | ------------------------------------------- | ----- |
+| **`city`**           | <code>string</code>                                             | The city name.                              | 1.0.0 |
+| **`country`**        | <code>string</code>                                             | The country name.                           | 1.0.0 |
+| **`formatted`**      | <code>string</code>                                             | The formatted address string.               | 1.0.0 |
+| **`isoCountryCode`** | <code>string</code>                                             | The ISO country code.                       | 1.0.0 |
+| **`isPrimary`**      | <code>boolean</code>                                            | Whether this is the primary postal address. | 1.0.0 |
+| **`label`**          | <code>string</code>                                             | Custom label for the postal address.        | 1.0.0 |
+| **`neighborhood`**   | <code>string</code>                                             | The neighborhood name.                      | 1.0.0 |
+| **`postalCode`**     | <code>string</code>                                             | The postal code.                            | 1.0.0 |
+| **`state`**          | <code>string</code>                                             | The state or province name.                 | 1.0.0 |
+| **`street`**         | <code>string</code>                                             | The street address.                         | 1.0.0 |
+| **`type`**           | <code><a href="#postaladdresstype">PostalAddressType</a></code> | The type of postal address.                 | 1.0.0 |
 
 
 #### UrlAddress
 
-| Prop        | Type                                                      |
-| ----------- | --------------------------------------------------------- |
-| **`value`** | <code>string</code>                                       |
-| **`type`**  | <code><a href="#urladdresstype">UrlAddressType</a></code> |
-| **`label`** | <code>string</code>                                       |
+URL address information for a contact.
+
+| Prop        | Type                                                      | Description               | Since |
+| ----------- | --------------------------------------------------------- | ------------------------- | ----- |
+| **`value`** | <code>string</code>                                       | The URL value.            | 1.0.0 |
+| **`type`**  | <code><a href="#urladdresstype">UrlAddressType</a></code> | The type of URL.          | 1.0.0 |
+| **`label`** | <code>string</code>                                       | Custom label for the URL. | 1.0.0 |
 
 
 #### CreateGroupResult
 
-| Prop     | Type                |
-| -------- | ------------------- |
-| **`id`** | <code>string</code> |
+Result from creating a group.
+
+| Prop     | Type                | Description                        | Since |
+| -------- | ------------------- | ---------------------------------- | ----- |
+| **`id`** | <code>string</code> | The ID of the newly created group. | 1.0.0 |
 
 
 #### CreateGroupOptions
 
-| Prop        | Type                                                                          |
-| ----------- | ----------------------------------------------------------------------------- |
-| **`group`** | <code><a href="#omit">Omit</a>&lt;<a href="#group">Group</a>, 'id'&gt;</code> |
+Options for creating a group.
+
+| Prop        | Type                                                                          | Description                                                                                       | Since |
+| ----------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ----- |
+| **`group`** | <code><a href="#omit">Omit</a>&lt;<a href="#group">Group</a>, 'id'&gt;</code> | <a href="#group">Group</a> information to create. The 'id' field will be generated automatically. | 1.0.0 |
 
 
 #### Group
 
-| Prop       | Type                |
-| ---------- | ------------------- |
-| **`id`**   | <code>string</code> |
-| **`name`** | <code>string</code> |
+<a href="#contact">Contact</a> group information.
+
+| Prop       | Type                | Description                      | Since |
+| ---------- | ------------------- | -------------------------------- | ----- |
+| **`id`**   | <code>string</code> | Unique identifier for the group. | 1.0.0 |
+| **`name`** | <code>string</code> | Name of the group.               | 1.0.0 |
 
 
 #### DeleteContactByIdOptions
 
-| Prop     | Type                |
-| -------- | ------------------- |
-| **`id`** | <code>string</code> |
+Options for deleting a contact by ID.
+
+| Prop     | Type                | Description                      | Since |
+| -------- | ------------------- | -------------------------------- | ----- |
+| **`id`** | <code>string</code> | The ID of the contact to delete. | 1.0.0 |
 
 
 #### DeleteGroupByIdOptions
 
-| Prop     | Type                |
-| -------- | ------------------- |
-| **`id`** | <code>string</code> |
+Options for deleting a group by ID.
+
+| Prop     | Type                | Description                    | Since |
+| -------- | ------------------- | ------------------------------ | ----- |
+| **`id`** | <code>string</code> | The ID of the group to delete. | 1.0.0 |
 
 
 #### DisplayContactByIdOptions
 
-| Prop     | Type                |
-| -------- | ------------------- |
-| **`id`** | <code>string</code> |
+Options for displaying a contact by ID.
+
+| Prop     | Type                | Description                       | Since |
+| -------- | ------------------- | --------------------------------- | ----- |
+| **`id`** | <code>string</code> | The ID of the contact to display. | 1.0.0 |
 
 
 #### DisplayCreateContactResult
 
-| Prop     | Type                |
-| -------- | ------------------- |
-| **`id`** | <code>string</code> |
+Result from displaying the native create contact UI.
+
+| Prop     | Type                | Description                                                                         | Since |
+| -------- | ------------------- | ----------------------------------------------------------------------------------- | ----- |
+| **`id`** | <code>string</code> | The ID of the created contact, if one was created. Undefined if the user cancelled. | 1.0.0 |
 
 
 #### DisplayCreateContactOptions
 
-| Prop          | Type                                                                              |
-| ------------- | --------------------------------------------------------------------------------- |
-| **`contact`** | <code><a href="#omit">Omit</a>&lt;<a href="#contact">Contact</a>, 'id'&gt;</code> |
+Options for displaying the native create contact UI.
+
+| Prop          | Type                                                                              | Description                                                | Since |
+| ------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------- | ----- |
+| **`contact`** | <code><a href="#omit">Omit</a>&lt;<a href="#contact">Contact</a>, 'id'&gt;</code> | Optional pre-filled contact information for the create UI. | 1.0.0 |
 
 
 #### DisplayUpdateContactByIdOptions
 
-| Prop     | Type                |
-| -------- | ------------------- |
-| **`id`** | <code>string</code> |
+Options for displaying the native update contact UI.
+
+| Prop     | Type                | Description                      | Since |
+| -------- | ------------------- | -------------------------------- | ----- |
+| **`id`** | <code>string</code> | The ID of the contact to update. | 1.0.0 |
 
 
 #### GetAccountsResult
 
-| Prop           | Type                   |
-| -------------- | ---------------------- |
-| **`accounts`** | <code>Account[]</code> |
+Result from getting accounts.
+
+| Prop           | Type                   | Description                               | Since |
+| -------------- | ---------------------- | ----------------------------------------- | ----- |
+| **`accounts`** | <code>Account[]</code> | List of accounts available on the device. | 1.0.0 |
 
 
 #### GetContactByIdResult
 
-| Prop          | Type                                                |
-| ------------- | --------------------------------------------------- |
-| **`contact`** | <code><a href="#contact">Contact</a> \| null</code> |
+Result from getting a contact by ID.
+
+| Prop          | Type                                                | Description                        | Since |
+| ------------- | --------------------------------------------------- | ---------------------------------- | ----- |
+| **`contact`** | <code><a href="#contact">Contact</a> \| null</code> | The contact, or null if not found. | 1.0.0 |
 
 
 #### GetContactByIdOptions
 
-| Prop         | Type                                                  |
-| ------------ | ----------------------------------------------------- |
-| **`id`**     | <code>string</code>                                   |
-| **`fields`** | <code>(keyof <a href="#contact">Contact</a>)[]</code> |
+Options for getting a contact by ID.
+
+| Prop         | Type                                                  | Description                                                                              | Since |
+| ------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------------------- | ----- |
+| **`id`**     | <code>string</code>                                   | The ID of the contact to retrieve.                                                       | 1.0.0 |
+| **`fields`** | <code>(keyof <a href="#contact">Contact</a>)[]</code> | Optional list of specific fields to retrieve. If not specified, all fields are returned. | 1.0.0 |
 
 
 #### GetContactsResult
 
-| Prop           | Type                   |
-| -------------- | ---------------------- |
-| **`contacts`** | <code>Contact[]</code> |
+Result from getting contacts.
+
+| Prop           | Type                   | Description       | Since |
+| -------------- | ---------------------- | ----------------- | ----- |
+| **`contacts`** | <code>Contact[]</code> | List of contacts. | 1.0.0 |
 
 
 #### GetContactsOptions
 
-| Prop         | Type                                                  |
-| ------------ | ----------------------------------------------------- |
-| **`fields`** | <code>(keyof <a href="#contact">Contact</a>)[]</code> |
-| **`limit`**  | <code>number</code>                                   |
-| **`offset`** | <code>number</code>                                   |
+Options for getting contacts.
+
+| Prop         | Type                                                  | Description                                                                              | Since |
+| ------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------------------- | ----- |
+| **`fields`** | <code>(keyof <a href="#contact">Contact</a>)[]</code> | Optional list of specific fields to retrieve. If not specified, all fields are returned. | 1.0.0 |
+| **`limit`**  | <code>number</code>                                   | Maximum number of contacts to return.                                                    | 1.0.0 |
+| **`offset`** | <code>number</code>                                   | Number of contacts to skip before starting to return results.                            | 1.0.0 |
 
 
 #### GetGroupByIdResult
 
-| Prop        | Type                                            |
-| ----------- | ----------------------------------------------- |
-| **`group`** | <code><a href="#group">Group</a> \| null</code> |
+Result from getting a group by ID.
+
+| Prop        | Type                                            | Description                      | Since |
+| ----------- | ----------------------------------------------- | -------------------------------- | ----- |
+| **`group`** | <code><a href="#group">Group</a> \| null</code> | The group, or null if not found. | 1.0.0 |
 
 
 #### GetGroupByIdOptions
 
-| Prop     | Type                |
-| -------- | ------------------- |
-| **`id`** | <code>string</code> |
+Options for getting a group by ID.
+
+| Prop     | Type                | Description                      | Since |
+| -------- | ------------------- | -------------------------------- | ----- |
+| **`id`** | <code>string</code> | The ID of the group to retrieve. | 1.0.0 |
 
 
 #### GetGroupsResult
 
-| Prop         | Type                 |
-| ------------ | -------------------- |
-| **`groups`** | <code>Group[]</code> |
+Result from getting groups.
+
+| Prop         | Type                 | Description     | Since |
+| ------------ | -------------------- | --------------- | ----- |
+| **`groups`** | <code>Group[]</code> | List of groups. | 1.0.0 |
 
 
 #### IsAvailableResult
 
-| Prop              | Type                 |
-| ----------------- | -------------------- |
-| **`isAvailable`** | <code>boolean</code> |
+Result from checking if contacts are available on the device.
+
+| Prop              | Type                 | Description                                    | Since |
+| ----------------- | -------------------- | ---------------------------------------------- | ----- |
+| **`isAvailable`** | <code>boolean</code> | Whether contacts are available on this device. | 1.0.0 |
 
 
 #### IsSupportedResult
 
-| Prop              | Type                 |
-| ----------------- | -------------------- |
-| **`isSupported`** | <code>boolean</code> |
+Result from checking if the plugin is supported on the platform.
+
+| Prop              | Type                 | Description                                       | Since |
+| ----------------- | -------------------- | ------------------------------------------------- | ----- |
+| **`isSupported`** | <code>boolean</code> | Whether the plugin is supported on this platform. | 1.0.0 |
 
 
 #### PickContactsResult
 
-| Prop           | Type                   |
-| -------------- | ---------------------- |
-| **`contacts`** | <code>Contact[]</code> |
+Result from picking contacts.
+
+| Prop           | Type                   | Description                | Since |
+| -------------- | ---------------------- | -------------------------- | ----- |
+| **`contacts`** | <code>Contact[]</code> | List of selected contacts. | 1.0.0 |
 
 
 #### PickContactsOptions
 
-| Prop           | Type                                                  |
-| -------------- | ----------------------------------------------------- |
-| **`fields`**   | <code>(keyof <a href="#contact">Contact</a>)[]</code> |
-| **`multiple`** | <code>boolean</code>                                  |
+Options for picking contacts using the native contact picker.
+
+| Prop           | Type                                                  | Description                                                                              | Since |
+| -------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------- | ----- |
+| **`fields`**   | <code>(keyof <a href="#contact">Contact</a>)[]</code> | Optional list of specific fields to retrieve. If not specified, all fields are returned. | 1.0.0 |
+| **`multiple`** | <code>boolean</code>                                  | Whether to allow selecting multiple contacts. Default is false.                          | 1.0.0 |
 
 
 #### UpdateContactByIdOptions
 
-| Prop          | Type                                                                              |
-| ------------- | --------------------------------------------------------------------------------- |
-| **`id`**      | <code>string</code>                                                               |
-| **`contact`** | <code><a href="#omit">Omit</a>&lt;<a href="#contact">Contact</a>, 'id'&gt;</code> |
+Options for updating a contact by ID.
+
+| Prop          | Type                                                                              | Description                      | Since |
+| ------------- | --------------------------------------------------------------------------------- | -------------------------------- | ----- |
+| **`id`**      | <code>string</code>                                                               | The ID of the contact to update. | 1.0.0 |
+| **`contact`** | <code><a href="#omit">Omit</a>&lt;<a href="#contact">Contact</a>, 'id'&gt;</code> | Updated contact information.     | 1.0.0 |
 
 
 #### PermissionStatus
 
-| Prop                | Type                                                                        |
-| ------------------- | --------------------------------------------------------------------------- |
-| **`readContacts`**  | <code><a href="#contactspermissionstate">ContactsPermissionState</a></code> |
-| **`writeContacts`** | <code><a href="#contactspermissionstate">ContactsPermissionState</a></code> |
+Status of contacts permissions.
+
+| Prop                | Type                                                                        | Description                            | Since |
+| ------------------- | --------------------------------------------------------------------------- | -------------------------------------- | ----- |
+| **`readContacts`**  | <code><a href="#contactspermissionstate">ContactsPermissionState</a></code> | Permission state for reading contacts. | 1.0.0 |
+| **`writeContacts`** | <code><a href="#contactspermissionstate">ContactsPermissionState</a></code> | Permission state for writing contacts. | 1.0.0 |
 
 
 #### RequestPermissionsOptions
 
-| Prop              | Type                                  |
-| ----------------- | ------------------------------------- |
-| **`permissions`** | <code>ContactsPermissionType[]</code> |
+Options for requesting contacts permissions.
+
+| Prop              | Type                                  | Description                                                                          | Since |
+| ----------------- | ------------------------------------- | ------------------------------------------------------------------------------------ | ----- |
+| **`permissions`** | <code>ContactsPermissionType[]</code> | Specific permissions to request. If not provided, all permissions will be requested. | 1.0.0 |
 
 
 ### Type Aliases
@@ -658,40 +812,56 @@ From T, pick a set of properties whose keys are in the union K
 
 #### EmailAddressType
 
+Type of email address.
+
 <code>'CUSTOM' | 'HOME' | 'ICLOUD' | 'OTHER' | 'WORK'</code>
 
 
 #### PhoneNumberType
+
+Type of phone number.
 
 <code>'ASSISTANT' | 'CALLBACK' | 'CAR' | 'COMPANY_MAIN' | 'CUSTOM' | 'FAX_HOME' | 'FAX_WORK' | 'HOME' | 'HOME_FAX' | 'ISDN' | 'MAIN' | 'MMS' | 'MOBILE' | 'OTHER' | 'OTHER_FAX' | 'PAGER' | 'RADIO' | 'TELEX' | 'TTY_TDD' | 'WORK' | 'WORK_MOBILE' | 'WORK_PAGER'</code>
 
 
 #### PostalAddressType
 
+Type of postal address.
+
 <code>'CUSTOM' | 'HOME' | 'OTHER' | 'WORK'</code>
 
 
 #### UrlAddressType
+
+Type of URL address.
 
 <code>'BLOG' | 'CUSTOM' | 'FTP' | 'HOME' | 'HOMEPAGE' | 'OTHER' | 'PROFILE' | 'SCHOOL' | 'WORK'</code>
 
 
 #### ContactField
 
+Field names available in a <a href="#contact">Contact</a> object.
+
 <code>keyof <a href="#contact">Contact</a></code>
 
 
 #### PickContactOptions
+
+Alias for <a href="#pickcontactsoptions">PickContactsOptions</a>.
 
 <code><a href="#pickcontactsoptions">PickContactsOptions</a></code>
 
 
 #### PickContactResult
 
+Alias for <a href="#pickcontactsresult">PickContactsResult</a>.
+
 <code><a href="#pickcontactsresult">PickContactsResult</a></code>
 
 
 #### ContactsPermissionState
+
+Permission state for contacts access, including the 'limited' state for iOS 18+.
 
 <code><a href="#permissionstate">PermissionState</a> | 'limited'</code>
 
@@ -702,6 +872,8 @@ From T, pick a set of properties whose keys are in the union K
 
 
 #### ContactsPermissionType
+
+Type of contacts permission to request.
 
 <code>'readContacts' | 'writeContacts'</code>
 
