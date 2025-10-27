@@ -1,7 +1,7 @@
 {
-  "name": "@capgo/capacitor-accelerometer",
+  "name": "@capgo/capacitor-contacts",
   "version": "7.0.0",
-  "description": "Read device accelerometer measurements with Capacitor",
+  "description": "Work with device contacts using Capacitor APIs",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
@@ -13,38 +13,38 @@
     "ios/Sources",
     "ios/Tests",
     "Package.swift",
-    "CapgoCapacitorAccelerometer.podspec"
+    "CapgoCapacitorContacts.podspec"
   ],
   "author": "Cap-go <contact@capgo.app>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Cap-go/capacitor-accelerometer.git"
+    "url": "git+https://github.com/Cap-go/capacitor-contacts.git"
   },
   "bugs": {
-    "url": "https://github.com/Cap-go/capacitor-accelerometer/issues"
+    "url": "https://github.com/Cap-go/capacitor-contacts/issues"
   },
   "keywords": [
     "capacitor",
     "plugin",
     "native",
-    "accelerometer",
-    "sensor",
-    "motion",
+    "contacts",
+    "address book",
+    "phonebook",
     "capgo",
     "capacitor"
   ],
   "scripts": {
     "verify": "npm run verify:ios && npm run verify:android && npm run verify:web",
-    "verify:ios": "xcodebuild -scheme CapgoCapacitorAccelerometer -destination generic/platform=iOS",
+    "verify:ios": "xcodebuild -scheme CapgoCapacitorContacts -destination generic/platform=iOS",
     "verify:android": "cd android && ./gradlew clean build test && cd ..",
     "verify:web": "npm run build",
     "lint": "npm run eslint && npm run prettier -- --check && npm run swiftlint -- lint",
-    "fmt": "npm run eslint -- --fix && npm run prettier -- --write && npm run swiftlint -- --autocorrect --format",
+    "fmt": "npm run eslint -- --fix && npm run prettier -- --write && npm run swiftlint -- --fix --format",
     "eslint": "eslint . --ext .ts",
     "prettier": "prettier \"**/*.{css,html,ts,js,java}\" --plugin=prettier-plugin-java",
     "swiftlint": "node-swiftlint",
-    "docgen": "docgen --api CapacitorAccelerometerPlugin --output-readme README.md --output-json dist/docs.json",
+    "docgen": "docgen --api CapacitorContactsPlugin --output-readme README.md --output-json dist/docs.json",
     "build": "npm run clean && npm run docgen && tsc && rollup -c rollup.config.mjs",
     "clean": "rimraf ./dist",
     "watch": "tsc --watch",

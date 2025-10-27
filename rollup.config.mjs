@@ -4,7 +4,7 @@ export default {
     {
       file: 'dist/plugin.js',
       format: 'iife',
-      name: 'capacitorCapacitorAccelerometer',
+      name: 'capacitorCapacitorContacts',
       globals: {
         '@capacitor/core': 'capacitorExports',
       },

@@ -1,6 +1,6 @@
 {
-  "appId": "app.capgo.accelerometer",
-  "appName": "Accelerometer Example",
+  "appId": "app.capgo.contacts",
+  "appName": "Contacts Example",
   "webDir": "dist",
   "plugins": {
     "SplashScreen": {

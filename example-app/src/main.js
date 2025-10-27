@@ -1,81 +1,66 @@
 import './style.css';
-import { CapacitorAccelerometer } from '@capgo/capacitor-accelerometer';
+import { CapacitorContacts } from '@capgo/capacitor-contacts';
 
-const measurementLabel = document.getElementById('measurement');
-const availabilityLabel = document.getElementById('availability');
 const permissionLabel = document.getElementById('permission');
-const startButton = document.getElementById('start-updates');
-const stopButton = document.getElementById('stop-updates');
-const singleReadButton = document.getElementById('read-once');
+const supportedLabel = document.getElementById('supported');
+const outcomeLabel = document.getElementById('outcome');
 
-let measurementListener;
+const checkPermissionButton = document.getElementById('check-permission');
+const requestPermissionButton = document.getElementById('request-permission');
+const pickContactButton = document.getElementById('pick-contact');
+const listContactsButton = document.getElementById('list-contacts');
 
-function formatMeasurement(measurement) {
-  const x = measurement.x?.toFixed(3) ?? '0.000';
-  const y = measurement.y?.toFixed(3) ?? '0.000';
-  const z = measurement.z?.toFixed(3) ?? '0.000';
-  return `x: ${x}g | y: ${y}g | z: ${z}g`;
+function setOutcome(message) {
+  outcomeLabel.textContent = message;
 }
 
-async function refreshAvailability() {
-  const { isAvailable } = await CapacitorAccelerometer.isAvailable();
-  availabilityLabel.textContent = isAvailable ? 'Available' : 'Not available';
-}
-
-async function refreshPermission() {
-  const { accelerometer } = await CapacitorAccelerometer.checkPermissions();
-  permissionLabel.textContent = accelerometer;
-}
-
-async function ensurePermission() {
-  const { accelerometer } = await CapacitorAccelerometer.requestPermissions();
-  permissionLabel.textContent = accelerometer;
-  if (accelerometer !== 'granted') {
-    throw new Error(`Permission not granted: ${accelerometer}`);
-  }
-}
-
-async function readOnce() {
+async function refreshState() {
   try {
-    await ensurePermission();
-    const measurement = await CapacitorAccelerometer.getMeasurement();
-    measurementLabel.textContent = formatMeasurement(measurement);
+    const supported = await CapacitorContacts.isSupported();
+    supportedLabel.textContent = supported.isSupported ? 'Available' : 'Unavailable';
   } catch (error) {
-    measurementLabel.textContent = error.message;
+    supportedLabel.textContent = error?.message ?? 'Unavailable';
   }
-}
 
-async function startUpdates() {
   try {
-    await ensurePermission();
-    if (!measurementListener) {
-      measurementListener = await CapacitorAccelerometer.addListener('measurement', (event) => {
-        measurementLabel.textContent = formatMeasurement(event);
-      });
-    }
-    await CapacitorAccelerometer.startMeasurementUpdates();
-    startButton.disabled = true;
-    stopButton.disabled = false;
-    singleReadButton.disabled = true;
+    const status = await CapacitorContacts.checkPermissions();
+    permissionLabel.textContent = `read=${status.readContacts}, write=${status.writeContacts}`;
   } catch (error) {
-    measurementLabel.textContent = error.message;
+    permissionLabel.textContent = error?.message ?? 'Unknown';
   }
 }
 
-async function stopUpdates() {
-  await CapacitorAccelerometer.stopMeasurementUpdates();
-  if (measurementListener) {
-    await measurementListener.remove();
-    measurementListener = undefined;
+checkPermissionButton.addEventListener('click', async () => {
+  await refreshState();
+  setOutcome('Permissions refreshed.');
+});
+
+requestPermissionButton.addEventListener('click', async () => {
+  try {
+    const status = await CapacitorContacts.requestPermissions();
+    permissionLabel.textContent = `read=${status.readContacts}, write=${status.writeContacts}`;
+    setOutcome('Requested contacts permissions.');
+  } catch (error) {
+    setOutcome(error?.message ?? String(error));
   }
-  startButton.disabled = false;
-  stopButton.disabled = true;
-  singleReadButton.disabled = false;
-}
+});
 
-startButton.addEventListener('click', startUpdates);
-stopButton.addEventListener('click', stopUpdates);
-singleReadButton.addEventListener('click', readOnce);
+pickContactButton.addEventListener('click', async () => {
+  try {
+    const result = await CapacitorContacts.pickContact();
+    setOutcome(JSON.stringify(result, null, 2));
+  } catch (error) {
+    setOutcome(error?.message ?? String(error));
+  }
+});
 
-refreshAvailability();
-refreshPermission();
+listContactsButton.addEventListener('click', async () => {
+  try {
+    const result = await CapacitorContacts.getContacts({ limit: 5 });
+    setOutcome(JSON.stringify(result, null, 2));
+  } catch (error) {
+    setOutcome(error?.message ?? String(error));
+  }
+});
+
+refreshState().catch((error) => setOutcome(error?.message ?? String(error)));

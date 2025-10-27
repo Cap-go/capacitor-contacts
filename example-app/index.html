@@ -3,21 +3,21 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@capgo/capacitor-accelerometer Example</title>
+    <title>@capgo/capacitor-contacts Example</title>
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
     <main class="container">
-      <h1>@capgo/capacitor-accelerometer Example</h1>
+      <h1>@capgo/capacitor-contacts Example</h1>
       <p class="lead">
-        Inspect accelerometer readings from the native plugin. Start continuous updates or request a single snapshot to
-        verify your wiring.
+        Quick playground to test the Capacitor contacts plugin implementation. Most operations are stubs until the
+        native layers are wired, but the UI makes it easy to hook in real data later.
       </p>
 
       <div class="status-grid">
         <div class="status-card">
-          <h2>Availability</h2>
-          <p id="availability">Checking...</p>
+          <h2>Supported</h2>
+          <p id="supported">Checking...</p>
         </div>
         <div class="status-card">
           <h2>Permission</h2>
@@ -25,13 +25,14 @@
         </div>
       </div>
 
-      <div class="measurement-display" id="measurement">No data yet.</div>
-
       <div class="actions">
-        <button id="start-updates">Start Updates</button>
-        <button id="stop-updates" class="secondary" disabled>Stop Updates</button>
-        <button id="read-once" class="secondary">Read Once</button>
+        <button id="check-permission">Check Permissions</button>
+        <button id="request-permission" class="secondary">Request Permissions</button>
+        <button id="pick-contact" class="secondary">Pick Contact</button>
+        <button id="list-contacts" class="secondary">List Contacts</button>
       </div>
+
+      <pre id="outcome">Ready.</pre>
     </main>
     <script type="module" src="/src/main.js"></script>
   </body>

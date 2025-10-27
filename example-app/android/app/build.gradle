@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "app.capgo.accelerometer"
+    namespace "app.capgo.contacts"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "app.capgo.accelerometer"
+        applicationId "app.capgo.contacts"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

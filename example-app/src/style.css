@@ -16,7 +16,7 @@ body {
 }
 
 main.container {
-  width: min(540px, 100%);
+  width: min(640px, 100%);
   background: #ffffff;
   border-radius: 18px;
   padding: 2rem;
@@ -28,7 +28,7 @@ main.container {
 
 h1 {
   margin: 0;
-  font-size: 1.75rem;
+  font-size: 1.8rem;
   color: #0f172a;
 }
 
@@ -40,8 +40,8 @@ h1 {
 
 .status-grid {
   display: grid;
-  gap: 1rem;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
 }
 
 .status-card {
@@ -61,29 +61,19 @@ h1 {
 
 .status-card p {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
-  color: #0f172a;
-}
-
-.measurement-display {
-  padding: 1.2rem;
-  border-radius: 14px;
-  background: linear-gradient(120deg, rgba(34, 211, 238, 0.12), rgba(99, 102, 241, 0.12));
-  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
-    monospace;
-  font-size: 1.05rem;
   color: #0f172a;
 }
 
 .actions {
   display: flex;
-  gap: 0.75rem;
   flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 button {
-  padding: 0.75rem 1.4rem;
+  padding: 0.7rem 1.4rem;
   font-size: 0.95rem;
   border-radius: 12px;
   border: none;
@@ -110,4 +100,14 @@ button:disabled {
 button:not(:disabled):hover {
   transform: translateY(-2px);
   filter: brightness(1.05);
+}
+
+pre {
+  margin: 0;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.05);
+  border-radius: 12px;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
 }

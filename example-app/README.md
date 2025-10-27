@@ -1,12 +1,12 @@
-# Example App for `@capgo/capacitor-accelerometer`
+# Example App for `@capgo/capacitor-contacts`
 
-This Vite project links directly to the local plugin source so you can exercise the accelerometer APIs while developing.
+This Vite project links directly to the local plugin source so you can try out the Contacts API integration while developing.
 
 ## Playground actions
 
-- **Start updates** – Begins streaming accelerometer measurements so you can confirm native wiring.
-- **Stop updates** – Stops the continuous stream.
-- **Read once** – Requests a single measurement snapshot without subscribing to events.
+- **Check permissions** – Reads the current read/write contacts permission states.
+- **Request permissions** – Prompts the system permission dialog (native only once implemented).
+- **Pick contact / List contacts** – Placeholder actions that will surface results once the native bridges are complete.
 
 ## Getting started
 

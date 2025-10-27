@@ -2,27 +2,27 @@
 import PackageDescription
 
 let package = Package(
-    name: "CapgoCapacitorAccelerometer",
+    name: "CapgoCapacitorContacts",
     platforms: [.iOS(.v14)],
     products: [
         .library(
-            name: "CapgoCapacitorAccelerometer",
-            targets: ["CapacitorAccelerometerPlugin"])
+            name: "CapgoCapacitorContacts",
+            targets: ["CapacitorContactsPlugin"])
     ],
     dependencies: [
         .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", from: "7.0.0")
     ],
     targets: [
         .target(
-            name: "CapacitorAccelerometerPlugin",
+            name: "CapacitorContactsPlugin",
             dependencies: [
                 .product(name: "Capacitor", package: "capacitor-swift-pm"),
                 .product(name: "Cordova", package: "capacitor-swift-pm")
             ],
-            path: "ios/Sources/CapacitorAccelerometerPlugin"),
+            path: "ios/Sources/CapacitorContactsPlugin"),
         .testTarget(
-            name: "CapacitorAccelerometerPluginTests",
-            dependencies: ["CapacitorAccelerometerPlugin"],
-            path: "ios/Tests/CapacitorAccelerometerPluginTests")
+            name: "CapacitorContactsPluginTests",
+            dependencies: ["CapacitorContactsPlugin"],
+            path: "ios/Tests/CapacitorContactsPluginTests")
     ]
 )

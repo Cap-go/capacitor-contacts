@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Accelerometer Example</string>
-    <string name="title_activity_main">Accelerometer Example</string>
-    <string name="package_name">app.capgo.accelerometer</string>
-    <string name="custom_url_scheme">app.capgo.accelerometer</string>
+    <string name="app_name">Contacts Example</string>
+    <string name="title_activity_main">Contacts Example</string>
+    <string name="package_name">app.capgo.contacts</string>
+    <string name="custom_url_scheme">app.capgo.contacts</string>
 </resources>
