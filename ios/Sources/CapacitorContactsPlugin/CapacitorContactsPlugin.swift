@@ -4,7 +4,7 @@ import UIKit
 
 @objc(CapacitorContactsPlugin)
 public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
-    private let PLUGIN_VERSION: String = "7.1.2"
+    private let PLUGIN_VERSION: String = "7.2.0"
     public let identifier = "CapacitorContactsPlugin"
     public let jsName = "CapacitorContacts"
     public let pluginMethods: [CAPPluginMethod] = [

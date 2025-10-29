@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [7.2.0](https://github.com/Cap-go/capacitor-contacts/compare/7.1.2...7.2.0) (2025-10-29)
+
+
+### Features
+
+* add getPluginVersion method to retrieve plugin version ([ec12c95](https://github.com/Cap-go/capacitor-contacts/commit/ec12c950481fce8db9ec6d7b0b41519a6f7cf790))
+
+
+### Bug Fixes
+
+* update package reference from capacitor-downloader to capacitor-contacts ([73647fc](https://github.com/Cap-go/capacitor-contacts/commit/73647fcb066d7aad92eb54e252d2b9f8500f8044))
+
 ## [7.1.2](https://github.com/Cap-go/capacitor-contacts/compare/7.1.1...7.1.2) (2025-10-29)
 
 
