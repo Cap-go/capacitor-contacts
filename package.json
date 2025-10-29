@@ -1,6 +1,6 @@
 {
   "name": "@capgo/capacitor-contacts",
-  "version": "7.1.1",
+  "version": "7.1.2",
   "description": "Work with device contacts using Capacitor APIs",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",

@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [7.1.2](https://github.com/Cap-go/capacitor-contacts/compare/7.1.1...7.1.2) (2025-10-29)
+
+
+### Bug Fixes
+
+* CI/CD config ([6006c94](https://github.com/Cap-go/capacitor-contacts/commit/6006c940cfa91dc4b8ba42b3eb8e74ded68c90ff))
+* update AI model in build workflow ([37cd445](https://github.com/Cap-go/capacitor-contacts/commit/37cd4459137a050073452fe8fee4b9ff1c7117df))
+* update github action ([59a7965](https://github.com/Cap-go/capacitor-contacts/commit/59a79657e767abfa2946c80f4ab7dcf06b01ef64))
+
 ## [7.1.1](https://github.com/Cap-go/capacitor-contacts/compare/7.1.0...7.1.1) (2025-10-27)
 
 
