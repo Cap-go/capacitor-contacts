@@ -4,6 +4,7 @@ import UIKit
 
 @objc(CapacitorContactsPlugin)
 public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
+    private let PLUGIN_VERSION: String = "7.1.2"
     public let identifier = "CapacitorContactsPlugin"
     public let jsName = "CapacitorContacts"
     public let pluginMethods: [CAPPluginMethod] = [
@@ -27,7 +28,8 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "pickContacts", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "updateContactById", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "checkPermissions", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "requestPermissions", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "requestPermissions", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getPluginVersion", returnType: CAPPluginReturnPromise)
     ]
 
     private let contactStore = CNContactStore()
@@ -149,6 +151,10 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
                 }
             }
         }
+    }
+
+    @objc func getPluginVersion(_ call: CAPPluginCall) {
+        call.resolve(["version": self.PLUGIN_VERSION])
     }
 
     @objc override public func checkPermissions(_ call: CAPPluginCall) {

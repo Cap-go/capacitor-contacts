@@ -38,6 +38,7 @@ import java.util.Set;
     }
 )
 public class CapacitorContactsPlugin extends Plugin {
+    private final String PLUGIN_VERSION = "7.1.2";
 
     // MARK: - Implemented API surface
 
@@ -191,6 +192,17 @@ public class CapacitorContactsPlugin extends Plugin {
     public void handleRequestPermissions(PluginCall call) {
         JSObject status = buildPermissionStatus();
         call.resolve(status);
+    }
+
+    @PluginMethod
+    public void getPluginVersion(PluginCall call) {
+        try {
+            JSObject ret = new JSObject();
+            ret.put("version", PLUGIN_VERSION);
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("Could not get plugin version", e);
+        }
     }
 
     // MARK: - Not yet implemented operations
