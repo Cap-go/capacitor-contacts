@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [7.2.1](https://github.com/Cap-go/capacitor-contacts/compare/7.2.0...7.2.1) (2025-10-30)
+
+
+### Bug Fixes
+
+* pluginVersion lint issue ([b6fa04b](https://github.com/Cap-go/capacitor-contacts/commit/b6fa04bbf374d935451de0975acb6de2a3c00cf0))
+
 ## [7.2.0](https://github.com/Cap-go/capacitor-contacts/compare/7.1.2...7.2.0) (2025-10-29)
 
 
