@@ -4,7 +4,7 @@ import UIKit
 
 @objc(CapacitorContactsPlugin)
 public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
-    private let PLUGIN_VERSION: String = "7.2.0"
+    private let pluginVersion: String = "7.2.0"
     public let identifier = "CapacitorContactsPlugin"
     public let jsName = "CapacitorContacts"
     public let pluginMethods: [CAPPluginMethod] = [
@@ -154,7 +154,7 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func getPluginVersion(_ call: CAPPluginCall) {
-        call.resolve(["version": self.PLUGIN_VERSION])
+        call.resolve(["version": self.pluginVersion])
     }
 
     @objc override public func checkPermissions(_ call: CAPPluginCall) {
