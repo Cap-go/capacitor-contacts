@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [7.2.2](https://github.com/Cap-go/capacitor-contacts/compare/7.2.1...7.2.2) (2025-10-31)
+
+
+### Bug Fixes
+
+* remove WIP status ([41b1353](https://github.com/Cap-go/capacitor-contacts/commit/41b13537d2fceb48ee1907a12b373b7581d1ad8c))
+
 ## [7.2.1](https://github.com/Cap-go/capacitor-contacts/compare/7.2.0...7.2.1) (2025-10-30)
 
 
