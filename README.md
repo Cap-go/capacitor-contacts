@@ -9,8 +9,6 @@
 
 Manage device contacts across iOS, Android, and the Web with a unified Capacitor API.
 
-WIP: the plugin is not yet ready for production
-
 ## Documentation
 
 The most complete doc is available here: https://capgo.app/docs/plugins/contacts/
@@ -800,7 +798,9 @@ Construct a type with the properties of T except for those in type K.
 
 From T, pick a set of properties whose keys are in the union K
 
-<code>{ [P in K]: T[P]; }</code>
+<code>{
+ [P in K]: T[P];
+ }</code>
 
 
 #### Exclude
