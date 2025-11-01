@@ -205,76 +205,849 @@ public class CapacitorContactsPlugin extends Plugin {
         }
     }
 
-    // MARK: - Not yet implemented operations
-
-    private void notImplemented(PluginCall call) {
-        call.reject("Method not implemented yet.");
-    }
+    // MARK: - Write operations
 
     @PluginMethod
     public void createContact(PluginCall call) {
-        notImplemented(call);
-    }
+        if (!hasWritePermission()) {
+            call.reject("WRITE_CONTACTS permission not granted.");
+            return;
+        }
 
-    @PluginMethod
-    public void createGroup(PluginCall call) {
-        notImplemented(call);
-    }
+        JSObject options = call.getObject("options", new JSObject());
+        JSObject contactData = options.getJSObject("contact");
+        if (contactData == null) {
+            call.reject("Missing contact data.");
+            return;
+        }
 
-    @PluginMethod
-    public void deleteContactById(PluginCall call) {
-        notImplemented(call);
-    }
-
-    @PluginMethod
-    public void deleteGroupById(PluginCall call) {
-        notImplemented(call);
-    }
-
-    @PluginMethod
-    public void displayContactById(PluginCall call) {
-        notImplemented(call);
-    }
-
-    @PluginMethod
-    public void displayCreateContact(PluginCall call) {
-        notImplemented(call);
-    }
-
-    @PluginMethod
-    public void displayUpdateContactById(PluginCall call) {
-        notImplemented(call);
-    }
-
-    @PluginMethod
-    public void getGroupById(PluginCall call) {
-        notImplemented(call);
-    }
-
-    @PluginMethod
-    public void getGroups(PluginCall call) {
-        notImplemented(call);
-    }
-
-    @PluginMethod
-    public void pickContact(PluginCall call) {
-        notImplemented(call);
-    }
-
-    @PluginMethod
-    public void pickContacts(PluginCall call) {
-        notImplemented(call);
+        try {
+            String contactId = insertContact(contactData);
+            call.resolve(new JSObject().put("id", contactId));
+        } catch (Exception ex) {
+            call.reject("Failed to create contact.", null, ex);
+        }
     }
 
     @PluginMethod
     public void updateContactById(PluginCall call) {
-        notImplemented(call);
+        if (!hasWritePermission()) {
+            call.reject("WRITE_CONTACTS permission not granted.");
+            return;
+        }
+
+        JSObject options = call.getObject("options", new JSObject());
+        String contactId = options.getString("id");
+        JSObject contactData = options.getJSObject("contact");
+
+        if (contactId == null || contactData == null) {
+            call.reject("Missing contact identifier or data.");
+            return;
+        }
+
+        try {
+            updateContact(contactId, contactData);
+            call.resolve();
+        } catch (Exception ex) {
+            call.reject("Failed to update contact.", null, ex);
+        }
+    }
+
+    @PluginMethod
+    public void deleteContactById(PluginCall call) {
+        if (!hasWritePermission()) {
+            call.reject("WRITE_CONTACTS permission not granted.");
+            return;
+        }
+
+        JSObject options = call.getObject("options", new JSObject());
+        String contactId = options.getString("id");
+
+        if (contactId == null) {
+            call.reject("Missing contact identifier.");
+            return;
+        }
+
+        try {
+            ContentResolver resolver = getContext().getContentResolver();
+            Uri contactUri = ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, Long.parseLong(contactId));
+            int rowsDeleted = resolver.delete(contactUri, null, null);
+            if (rowsDeleted > 0) {
+                call.resolve();
+            } else {
+                call.reject("Contact not found or could not be deleted.");
+            }
+        } catch (Exception ex) {
+            call.reject("Failed to delete contact.", null, ex);
+        }
+    }
+
+    // MARK: - Group operations
+
+    @PluginMethod
+    public void getGroups(PluginCall call) {
+        if (!hasReadPermission()) {
+            call.reject("READ_CONTACTS permission not granted.");
+            return;
+        }
+
+        ContentResolver resolver = getContext().getContentResolver();
+        JSArray groups = new JSArray();
+
+        try (
+            Cursor cursor = resolver.query(
+                ContactsContract.Groups.CONTENT_URI,
+                new String[] { ContactsContract.Groups._ID, ContactsContract.Groups.TITLE },
+                null,
+                null,
+                ContactsContract.Groups.TITLE + " ASC"
+            )
+        ) {
+            if (cursor != null) {
+                while (cursor.moveToNext()) {
+                    String id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Groups._ID));
+                    String name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Groups.TITLE));
+                    JSObject group = new JSObject();
+                    group.put("id", id);
+                    group.put("name", name);
+                    groups.put(group);
+                }
+            }
+            call.resolve(new JSObject().put("groups", groups));
+        } catch (Exception ex) {
+            call.reject("Failed to fetch groups.", null, ex);
+        }
+    }
+
+    @PluginMethod
+    public void getGroupById(PluginCall call) {
+        if (!hasReadPermission()) {
+            call.reject("READ_CONTACTS permission not granted.");
+            return;
+        }
+
+        JSObject options = call.getObject("options", new JSObject());
+        String groupId = options.getString("id");
+
+        if (groupId == null) {
+            call.reject("Missing group identifier.");
+            return;
+        }
+
+        ContentResolver resolver = getContext().getContentResolver();
+
+        try (
+            Cursor cursor = resolver.query(
+                ContactsContract.Groups.CONTENT_URI,
+                new String[] { ContactsContract.Groups._ID, ContactsContract.Groups.TITLE },
+                ContactsContract.Groups._ID + " = ?",
+                new String[] { groupId },
+                null
+            )
+        ) {
+            if (cursor != null && cursor.moveToFirst()) {
+                String id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Groups._ID));
+                String name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Groups.TITLE));
+                JSObject group = new JSObject();
+                group.put("id", id);
+                group.put("name", name);
+                call.resolve(new JSObject().put("group", group));
+            } else {
+                call.resolve(new JSObject().put("group", null));
+            }
+        } catch (Exception ex) {
+            call.reject("Failed to fetch group.", null, ex);
+        }
+    }
+
+    @PluginMethod
+    public void createGroup(PluginCall call) {
+        if (!hasWritePermission()) {
+            call.reject("WRITE_CONTACTS permission not granted.");
+            return;
+        }
+
+        JSObject options = call.getObject("options", new JSObject());
+        JSObject groupData = options.getJSObject("group");
+
+        if (groupData == null) {
+            call.reject("Missing group data.");
+            return;
+        }
+
+        String name = groupData.getString("name");
+        if (name == null) {
+            call.reject("Missing group name.");
+            return;
+        }
+
+        try {
+            ContentResolver resolver = getContext().getContentResolver();
+            ArrayList<android.content.ContentProviderOperation> ops = new ArrayList<>();
+
+            ops.add(
+                android.content.ContentProviderOperation
+                    .newInsert(ContactsContract.Groups.CONTENT_URI)
+                    .withValue(ContactsContract.Groups.TITLE, name)
+                    .build()
+            );
+
+            android.content.ContentProviderResult[] results = resolver.applyBatch(ContactsContract.AUTHORITY, ops);
+            if (results.length > 0 && results[0].uri != null) {
+                String groupId = results[0].uri.getLastPathSegment();
+                call.resolve(new JSObject().put("id", groupId));
+            } else {
+                call.reject("Failed to create group.");
+            }
+        } catch (Exception ex) {
+            call.reject("Failed to create group.", null, ex);
+        }
+    }
+
+    @PluginMethod
+    public void deleteGroupById(PluginCall call) {
+        if (!hasWritePermission()) {
+            call.reject("WRITE_CONTACTS permission not granted.");
+            return;
+        }
+
+        JSObject options = call.getObject("options", new JSObject());
+        String groupId = options.getString("id");
+
+        if (groupId == null) {
+            call.reject("Missing group identifier.");
+            return;
+        }
+
+        try {
+            ContentResolver resolver = getContext().getContentResolver();
+            int rowsDeleted = resolver.delete(
+                ContactsContract.Groups.CONTENT_URI,
+                ContactsContract.Groups._ID + " = ?",
+                new String[] { groupId }
+            );
+
+            if (rowsDeleted > 0) {
+                call.resolve();
+            } else {
+                call.reject("Group not found or could not be deleted.");
+            }
+        } catch (Exception ex) {
+            call.reject("Failed to delete group.", null, ex);
+        }
+    }
+
+    // MARK: - UI picker and display operations
+
+    private static final int PICK_CONTACT_REQUEST = 7001;
+    private static final int VIEW_CONTACT_REQUEST = 7002;
+    private static final int CREATE_CONTACT_REQUEST = 7003;
+    private static final int EDIT_CONTACT_REQUEST = 7004;
+
+    private PluginCall currentPickerCall;
+
+    @PluginMethod
+    public void pickContact(PluginCall call) {
+        currentPickerCall = call;
+        Intent intent = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
+        startActivityForResult(call, intent, PICK_CONTACT_REQUEST);
+    }
+
+    @PluginMethod
+    public void pickContacts(PluginCall call) {
+        // Android doesn't have a native multi-select contact picker
+        // Fall back to single selection
+        pickContact(call);
+    }
+
+    @PluginMethod
+    public void displayContactById(PluginCall call) {
+        JSObject options = call.getObject("options", new JSObject());
+        String contactId = options.getString("id");
+
+        if (contactId == null) {
+            call.reject("Missing contact identifier.");
+            return;
+        }
+
+        try {
+            Uri contactUri = ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, Long.parseLong(contactId));
+            Intent intent = new Intent(Intent.ACTION_VIEW, contactUri);
+            getContext().startActivity(intent);
+            call.resolve();
+        } catch (Exception ex) {
+            call.reject("Failed to display contact.", null, ex);
+        }
+    }
+
+    @PluginMethod
+    public void displayCreateContact(PluginCall call) {
+        currentPickerCall = call;
+        Intent intent = new Intent(Intent.ACTION_INSERT, ContactsContract.Contacts.CONTENT_URI);
+
+        JSObject options = call.getObject("options", new JSObject());
+        if (options != null) {
+            JSObject contactData = options.getJSObject("contact");
+            if (contactData != null) {
+                populateIntent(intent, contactData);
+            }
+        }
+
+        startActivityForResult(call, intent, CREATE_CONTACT_REQUEST);
+    }
+
+    @PluginMethod
+    public void displayUpdateContactById(PluginCall call) {
+        JSObject options = call.getObject("options", new JSObject());
+        String contactId = options.getString("id");
+
+        if (contactId == null) {
+            call.reject("Missing contact identifier.");
+            return;
+        }
+
+        try {
+            Uri contactUri = ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, Long.parseLong(contactId));
+            Intent intent = new Intent(Intent.ACTION_EDIT, contactUri);
+            intent.setType(ContactsContract.Contacts.CONTENT_ITEM_TYPE);
+            getContext().startActivity(intent);
+            call.resolve();
+        } catch (Exception ex) {
+            call.reject("Failed to display contact for editing.", null, ex);
+        }
+    }
+
+    @Override
+    protected void handleOnActivityResult(int requestCode, int resultCode, Intent data) {
+        super.handleOnActivityResult(requestCode, resultCode, data);
+
+        if (currentPickerCall == null) {
+            return;
+        }
+
+        PluginCall call = currentPickerCall;
+        currentPickerCall = null;
+
+        if (resultCode != android.app.Activity.RESULT_OK) {
+            if (requestCode == PICK_CONTACT_REQUEST) {
+                call.resolve(new JSObject().put("contacts", new JSArray()));
+            } else if (requestCode == CREATE_CONTACT_REQUEST) {
+                call.resolve(new JSObject());
+            }
+            return;
+        }
+
+        try {
+            if (requestCode == PICK_CONTACT_REQUEST) {
+                if (data != null && data.getData() != null) {
+                    String contactId = getContactIdFromUri(data.getData());
+                    if (contactId != null) {
+                        ContactBuilder builder = fetchContact(contactId);
+                        if (builder != null) {
+                            JSArray contacts = new JSArray();
+                            contacts.put(builder.toJSObject());
+                            call.resolve(new JSObject().put("contacts", contacts));
+                        } else {
+                            call.resolve(new JSObject().put("contacts", new JSArray()));
+                        }
+                    } else {
+                        call.resolve(new JSObject().put("contacts", new JSArray()));
+                    }
+                } else {
+                    call.resolve(new JSObject().put("contacts", new JSArray()));
+                }
+            } else if (requestCode == CREATE_CONTACT_REQUEST) {
+                if (data != null && data.getData() != null) {
+                    String contactId = getContactIdFromUri(data.getData());
+                    if (contactId != null) {
+                        call.resolve(new JSObject().put("id", contactId));
+                    } else {
+                        call.resolve(new JSObject());
+                    }
+                } else {
+                    call.resolve(new JSObject());
+                }
+            }
+        } catch (Exception ex) {
+            call.reject("Failed to process contact picker result.", null, ex);
+        }
+    }
+
+    private String getContactIdFromUri(Uri contactUri) {
+        ContentResolver resolver = getContext().getContentResolver();
+        try (Cursor cursor = resolver.query(contactUri, new String[] { ContactsContract.Contacts._ID }, null, null, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                return cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID));
+            }
+        } catch (Exception ex) {
+            // Ignore
+        }
+        return null;
+    }
+
+    // MARK: - Contact write helpers
+
+    private String insertContact(JSObject contactData) throws Exception {
+        ContentResolver resolver = getContext().getContentResolver();
+        ArrayList<android.content.ContentProviderOperation> ops = new ArrayList<>();
+
+        int rawContactInsertIndex = ops.size();
+        ops.add(
+            android.content.ContentProviderOperation
+                .newInsert(ContactsContract.RawContacts.CONTENT_URI)
+                .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, (String) null)
+                .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, (String) null)
+                .build()
+        );
+
+        // Add structured name
+        if (
+            contactData.has("givenName") ||
+            contactData.has("familyName") ||
+            contactData.has("middleName") ||
+            contactData.has("namePrefix") ||
+            contactData.has("nameSuffix")
+        ) {
+            ops.add(
+                android.content.ContentProviderOperation
+                    .newInsert(ContactsContract.Data.CONTENT_URI)
+                    .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+                    .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
+                    .withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, contactData.getString("givenName"))
+                    .withValue(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, contactData.getString("familyName"))
+                    .withValue(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME, contactData.getString("middleName"))
+                    .withValue(ContactsContract.CommonDataKinds.StructuredName.PREFIX, contactData.getString("namePrefix"))
+                    .withValue(ContactsContract.CommonDataKinds.StructuredName.SUFFIX, contactData.getString("nameSuffix"))
+                    .build()
+            );
+        }
+
+        // Add organization
+        if (contactData.has("organizationName") || contactData.has("jobTitle")) {
+            ops.add(
+                android.content.ContentProviderOperation
+                    .newInsert(ContactsContract.Data.CONTENT_URI)
+                    .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+                    .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE)
+                    .withValue(ContactsContract.CommonDataKinds.Organization.COMPANY, contactData.getString("organizationName"))
+                    .withValue(ContactsContract.CommonDataKinds.Organization.TITLE, contactData.getString("jobTitle"))
+                    .build()
+            );
+        }
+
+        // Add note
+        if (contactData.has("note")) {
+            ops.add(
+                android.content.ContentProviderOperation
+                    .newInsert(ContactsContract.Data.CONTENT_URI)
+                    .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+                    .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE)
+                    .withValue(ContactsContract.CommonDataKinds.Note.NOTE, contactData.getString("note"))
+                    .build()
+            );
+        }
+
+        // Add email addresses
+        if (contactData.has("emailAddresses")) {
+            try {
+                org.json.JSONArray emails = contactData.getJSONArray("emailAddresses");
+                for (int i = 0; i < emails.length(); i++) {
+                    org.json.JSONObject email = emails.getJSONObject(i);
+                    String value = email.optString("value");
+                    String type = email.optString("type", "OTHER");
+                    String label = email.optString("label");
+
+                    ops.add(
+                        android.content.ContentProviderOperation
+                            .newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.Email.ADDRESS, value)
+                            .withValue(ContactsContract.CommonDataKinds.Email.TYPE, reverseMapEmailType(type))
+                            .withValue(ContactsContract.CommonDataKinds.Email.LABEL, label)
+                            .build()
+                    );
+                }
+            } catch (Exception ex) {
+                // Ignore
+            }
+        }
+
+        // Add phone numbers
+        if (contactData.has("phoneNumbers")) {
+            try {
+                org.json.JSONArray phones = contactData.getJSONArray("phoneNumbers");
+                for (int i = 0; i < phones.length(); i++) {
+                    org.json.JSONObject phone = phones.getJSONObject(i);
+                    String value = phone.optString("value");
+                    String type = phone.optString("type", "OTHER");
+                    String label = phone.optString("label");
+
+                    ops.add(
+                        android.content.ContentProviderOperation
+                            .newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, value)
+                            .withValue(ContactsContract.CommonDataKinds.Phone.TYPE, reverseMapPhoneType(type))
+                            .withValue(ContactsContract.CommonDataKinds.Phone.LABEL, label)
+                            .build()
+                    );
+                }
+            } catch (Exception ex) {
+                // Ignore
+            }
+        }
+
+        // Add postal addresses
+        if (contactData.has("postalAddresses")) {
+            try {
+                org.json.JSONArray addresses = contactData.getJSONArray("postalAddresses");
+                for (int i = 0; i < addresses.length(); i++) {
+                    org.json.JSONObject address = addresses.getJSONObject(i);
+
+                    ops.add(
+                        android.content.ContentProviderOperation
+                            .newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.StructuredPostal.STREET, address.optString("street"))
+                            .withValue(ContactsContract.CommonDataKinds.StructuredPostal.CITY, address.optString("city"))
+                            .withValue(ContactsContract.CommonDataKinds.StructuredPostal.REGION, address.optString("state"))
+                            .withValue(ContactsContract.CommonDataKinds.StructuredPostal.POSTCODE, address.optString("postalCode"))
+                            .withValue(ContactsContract.CommonDataKinds.StructuredPostal.COUNTRY, address.optString("country"))
+                            .withValue(
+                                ContactsContract.CommonDataKinds.StructuredPostal.TYPE,
+                                reverseMapPostalType(address.optString("type", "OTHER"))
+                            )
+                            .withValue(ContactsContract.CommonDataKinds.StructuredPostal.LABEL, address.optString("label"))
+                            .build()
+                    );
+                }
+            } catch (Exception ex) {
+                // Ignore
+            }
+        }
+
+        // Add URL addresses
+        if (contactData.has("urlAddresses")) {
+            try {
+                org.json.JSONArray urls = contactData.getJSONArray("urlAddresses");
+                for (int i = 0; i < urls.length(); i++) {
+                    org.json.JSONObject url = urls.getJSONObject(i);
+
+                    ops.add(
+                        android.content.ContentProviderOperation
+                            .newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.Website.URL, url.optString("value"))
+                            .withValue(ContactsContract.CommonDataKinds.Website.TYPE, reverseMapUrlType(url.optString("type", "OTHER")))
+                            .withValue(ContactsContract.CommonDataKinds.Website.LABEL, url.optString("label"))
+                            .build()
+                    );
+                }
+            } catch (Exception ex) {
+                // Ignore
+            }
+        }
+
+        // Execute batch
+        android.content.ContentProviderResult[] results = resolver.applyBatch(ContactsContract.AUTHORITY, ops);
+
+        // Get the contact ID from the first result
+        if (results.length > 0 && results[0].uri != null) {
+            String rawContactId = results[0].uri.getLastPathSegment();
+            // Query for the actual contact ID
+            try (
+                Cursor cursor = resolver.query(
+                    ContactsContract.RawContacts.CONTENT_URI,
+                    new String[] { ContactsContract.RawContacts.CONTACT_ID },
+                    ContactsContract.RawContacts._ID + " = ?",
+                    new String[] { rawContactId },
+                    null
+                )
+            ) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    return cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.RawContacts.CONTACT_ID));
+                }
+            }
+        }
+
+        throw new Exception("Failed to create contact");
+    }
+
+    @SuppressLint("Range")
+    private void updateContact(String contactId, JSObject contactData) throws Exception {
+        ContentResolver resolver = getContext().getContentResolver();
+        ArrayList<android.content.ContentProviderOperation> ops = new ArrayList<>();
+
+        // Find the raw contact ID for this contact
+        String rawContactId = null;
+        try (
+            Cursor cursor = resolver.query(
+                ContactsContract.RawContacts.CONTENT_URI,
+                new String[] { ContactsContract.RawContacts._ID },
+                ContactsContract.RawContacts.CONTACT_ID + " = ?",
+                new String[] { contactId },
+                null
+            )
+        ) {
+            if (cursor != null && cursor.moveToFirst()) {
+                rawContactId = cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts._ID));
+            }
+        }
+
+        if (rawContactId == null) {
+            throw new Exception("Contact not found");
+        }
+
+        // Delete existing data
+        ops.add(
+            android.content.ContentProviderOperation
+                .newDelete(ContactsContract.Data.CONTENT_URI)
+                .withSelection(ContactsContract.Data.RAW_CONTACT_ID + " = ?", new String[] { rawContactId })
+                .build()
+        );
+
+        // Re-insert all data (simpler than updating individual fields)
+        int rawContactIdValue = Integer.parseInt(rawContactId);
+
+        // Add structured name
+        if (
+            contactData.has("givenName") ||
+            contactData.has("familyName") ||
+            contactData.has("middleName") ||
+            contactData.has("namePrefix") ||
+            contactData.has("nameSuffix")
+        ) {
+            ops.add(
+                android.content.ContentProviderOperation
+                    .newInsert(ContactsContract.Data.CONTENT_URI)
+                    .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactIdValue)
+                    .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
+                    .withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, contactData.getString("givenName"))
+                    .withValue(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, contactData.getString("familyName"))
+                    .withValue(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME, contactData.getString("middleName"))
+                    .withValue(ContactsContract.CommonDataKinds.StructuredName.PREFIX, contactData.getString("namePrefix"))
+                    .withValue(ContactsContract.CommonDataKinds.StructuredName.SUFFIX, contactData.getString("nameSuffix"))
+                    .build()
+            );
+        }
+
+        // Similar logic for other fields (organization, note, emails, phones, etc.)
+        // Add organization
+        if (contactData.has("organizationName") || contactData.has("jobTitle")) {
+            ops.add(
+                android.content.ContentProviderOperation
+                    .newInsert(ContactsContract.Data.CONTENT_URI)
+                    .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactIdValue)
+                    .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE)
+                    .withValue(ContactsContract.CommonDataKinds.Organization.COMPANY, contactData.getString("organizationName"))
+                    .withValue(ContactsContract.CommonDataKinds.Organization.TITLE, contactData.getString("jobTitle"))
+                    .build()
+            );
+        }
+
+        // Add note
+        if (contactData.has("note")) {
+            ops.add(
+                android.content.ContentProviderOperation
+                    .newInsert(ContactsContract.Data.CONTENT_URI)
+                    .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactIdValue)
+                    .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE)
+                    .withValue(ContactsContract.CommonDataKinds.Note.NOTE, contactData.getString("note"))
+                    .build()
+            );
+        }
+
+        // Add emails, phones, addresses, URLs (same logic as insert)
+        if (contactData.has("emailAddresses")) {
+            try {
+                org.json.JSONArray emails = contactData.getJSONArray("emailAddresses");
+                for (int i = 0; i < emails.length(); i++) {
+                    org.json.JSONObject email = emails.getJSONObject(i);
+                    ops.add(
+                        android.content.ContentProviderOperation
+                            .newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactIdValue)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.Email.ADDRESS, email.optString("value"))
+                            .withValue(ContactsContract.CommonDataKinds.Email.TYPE, reverseMapEmailType(email.optString("type", "OTHER")))
+                            .withValue(ContactsContract.CommonDataKinds.Email.LABEL, email.optString("label"))
+                            .build()
+                    );
+                }
+            } catch (Exception ex) {
+                // Ignore
+            }
+        }
+
+        if (contactData.has("phoneNumbers")) {
+            try {
+                org.json.JSONArray phones = contactData.getJSONArray("phoneNumbers");
+                for (int i = 0; i < phones.length(); i++) {
+                    org.json.JSONObject phone = phones.getJSONObject(i);
+                    ops.add(
+                        android.content.ContentProviderOperation
+                            .newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactIdValue)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, phone.optString("value"))
+                            .withValue(ContactsContract.CommonDataKinds.Phone.TYPE, reverseMapPhoneType(phone.optString("type", "OTHER")))
+                            .withValue(ContactsContract.CommonDataKinds.Phone.LABEL, phone.optString("label"))
+                            .build()
+                    );
+                }
+            } catch (Exception ex) {
+                // Ignore
+            }
+        }
+
+        resolver.applyBatch(ContactsContract.AUTHORITY, ops);
+    }
+
+    private void populateIntent(Intent intent, JSObject contactData) {
+        // Build full name from components
+        StringBuilder nameBuilder = new StringBuilder();
+        if (contactData.has("givenName")) {
+            nameBuilder.append(contactData.getString("givenName"));
+        }
+        if (contactData.has("familyName")) {
+            if (nameBuilder.length() > 0) {
+                nameBuilder.append(" ");
+            }
+            nameBuilder.append(contactData.getString("familyName"));
+        }
+        if (nameBuilder.length() > 0) {
+            intent.putExtra(ContactsContract.Intents.Insert.NAME, nameBuilder.toString());
+        }
+
+        if (contactData.has("organizationName")) {
+            intent.putExtra(ContactsContract.Intents.Insert.COMPANY, contactData.getString("organizationName"));
+        }
+        if (contactData.has("jobTitle")) {
+            intent.putExtra(ContactsContract.Intents.Insert.JOB_TITLE, contactData.getString("jobTitle"));
+        }
+        if (contactData.has("note")) {
+            intent.putExtra(ContactsContract.Intents.Insert.NOTES, contactData.getString("note"));
+        }
+
+        // Add first email if available
+        if (contactData.has("emailAddresses")) {
+            try {
+                org.json.JSONArray emails = contactData.getJSONArray("emailAddresses");
+                if (emails.length() > 0) {
+                    org.json.JSONObject email = emails.getJSONObject(0);
+                    intent.putExtra(ContactsContract.Intents.Insert.EMAIL, email.optString("value"));
+                }
+            } catch (Exception ex) {
+                // Ignore
+            }
+        }
+
+        // Add first phone if available
+        if (contactData.has("phoneNumbers")) {
+            try {
+                org.json.JSONArray phones = contactData.getJSONArray("phoneNumbers");
+                if (phones.length() > 0) {
+                    org.json.JSONObject phone = phones.getJSONObject(0);
+                    intent.putExtra(ContactsContract.Intents.Insert.PHONE, phone.optString("value"));
+                }
+            } catch (Exception ex) {
+                // Ignore
+            }
+        }
+    }
+
+    private int reverseMapEmailType(String type) {
+        switch (type) {
+            case "HOME":
+                return ContactsContract.CommonDataKinds.Email.TYPE_HOME;
+            case "WORK":
+                return ContactsContract.CommonDataKinds.Email.TYPE_WORK;
+            case "MOBILE":
+                return ContactsContract.CommonDataKinds.Email.TYPE_MOBILE;
+            case "CUSTOM":
+                return ContactsContract.CommonDataKinds.Email.TYPE_CUSTOM;
+            default:
+                return ContactsContract.CommonDataKinds.Email.TYPE_OTHER;
+        }
+    }
+
+    private int reverseMapPhoneType(String type) {
+        switch (type) {
+            case "HOME":
+                return ContactsContract.CommonDataKinds.Phone.TYPE_HOME;
+            case "WORK":
+                return ContactsContract.CommonDataKinds.Phone.TYPE_WORK;
+            case "MOBILE":
+                return ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE;
+            case "MAIN":
+                return ContactsContract.CommonDataKinds.Phone.TYPE_MAIN;
+            case "HOME_FAX":
+                return ContactsContract.CommonDataKinds.Phone.TYPE_FAX_HOME;
+            case "WORK_FAX":
+                return ContactsContract.CommonDataKinds.Phone.TYPE_FAX_WORK;
+            case "OTHER_FAX":
+                return ContactsContract.CommonDataKinds.Phone.TYPE_OTHER_FAX;
+            case "PAGER":
+                return ContactsContract.CommonDataKinds.Phone.TYPE_PAGER;
+            case "CAR":
+                return ContactsContract.CommonDataKinds.Phone.TYPE_CAR;
+            case "CALLBACK":
+                return ContactsContract.CommonDataKinds.Phone.TYPE_CALLBACK;
+            case "COMPANY_MAIN":
+                return ContactsContract.CommonDataKinds.Phone.TYPE_COMPANY_MAIN;
+            case "ASSISTANT":
+                return ContactsContract.CommonDataKinds.Phone.TYPE_ASSISTANT;
+            case "CUSTOM":
+                return ContactsContract.CommonDataKinds.Phone.TYPE_CUSTOM;
+            default:
+                return ContactsContract.CommonDataKinds.Phone.TYPE_OTHER;
+        }
+    }
+
+    private int reverseMapPostalType(String type) {
+        switch (type) {
+            case "HOME":
+                return ContactsContract.CommonDataKinds.StructuredPostal.TYPE_HOME;
+            case "WORK":
+                return ContactsContract.CommonDataKinds.StructuredPostal.TYPE_WORK;
+            case "CUSTOM":
+                return ContactsContract.CommonDataKinds.StructuredPostal.TYPE_CUSTOM;
+            default:
+                return ContactsContract.CommonDataKinds.StructuredPostal.TYPE_OTHER;
+        }
+    }
+
+    private int reverseMapUrlType(String type) {
+        switch (type) {
+            case "HOME":
+                return ContactsContract.CommonDataKinds.Website.TYPE_HOME;
+            case "WORK":
+                return ContactsContract.CommonDataKinds.Website.TYPE_WORK;
+            case "BLOG":
+                return ContactsContract.CommonDataKinds.Website.TYPE_BLOG;
+            case "PROFILE":
+                return ContactsContract.CommonDataKinds.Website.TYPE_PROFILE;
+            case "FTP":
+                return ContactsContract.CommonDataKinds.Website.TYPE_FTP;
+            case "CUSTOM":
+                return ContactsContract.CommonDataKinds.Website.TYPE_CUSTOM;
+            default:
+                return ContactsContract.CommonDataKinds.Website.TYPE_OTHER;
+        }
     }
 
     // MARK: - Permissions helpers
 
     private boolean hasReadPermission() {
         return getPermissionState("readContacts") == PermissionState.GRANTED;
+    }
+
+    private boolean hasWritePermission() {
+        return getPermissionState("writeContacts") == PermissionState.GRANTED;
     }
 
     private JSObject buildPermissionStatus() {
