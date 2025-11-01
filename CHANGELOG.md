@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [7.2.3](https://github.com/Cap-go/capacitor-contacts/compare/7.2.2...7.2.3) (2025-11-01)
+
+
+### Bug Fixes
+
+* contact add missing implementation ([b4b44be](https://github.com/Cap-go/capacitor-contacts/commit/b4b44be7ea804ba810f91216f137d19928ba4c74))
+
 ## [7.2.2](https://github.com/Cap-go/capacitor-contacts/compare/7.2.1...7.2.2) (2025-10-31)
 
 
