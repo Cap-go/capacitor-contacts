@@ -38,6 +38,7 @@ import java.util.Set;
     }
 )
 public class CapacitorContactsPlugin extends Plugin {
+
     private final String pluginVersion = "7.2.3";
 
     // MARK: - Implemented API surface
@@ -386,8 +387,7 @@ public class CapacitorContactsPlugin extends Plugin {
             ArrayList<android.content.ContentProviderOperation> ops = new ArrayList<>();
 
             ops.add(
-                android.content.ContentProviderOperation
-                    .newInsert(ContactsContract.Groups.CONTENT_URI)
+                android.content.ContentProviderOperation.newInsert(ContactsContract.Groups.CONTENT_URI)
                     .withValue(ContactsContract.Groups.TITLE, name)
                     .build()
             );
@@ -593,8 +593,7 @@ public class CapacitorContactsPlugin extends Plugin {
 
         int rawContactInsertIndex = ops.size();
         ops.add(
-            android.content.ContentProviderOperation
-                .newInsert(ContactsContract.RawContacts.CONTENT_URI)
+            android.content.ContentProviderOperation.newInsert(ContactsContract.RawContacts.CONTENT_URI)
                 .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, (String) null)
                 .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, (String) null)
                 .build()
@@ -609,8 +608,7 @@ public class CapacitorContactsPlugin extends Plugin {
             contactData.has("nameSuffix")
         ) {
             ops.add(
-                android.content.ContentProviderOperation
-                    .newInsert(ContactsContract.Data.CONTENT_URI)
+                android.content.ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                     .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
                     .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
                     .withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, contactData.getString("givenName"))
@@ -625,8 +623,7 @@ public class CapacitorContactsPlugin extends Plugin {
         // Add organization
         if (contactData.has("organizationName") || contactData.has("jobTitle")) {
             ops.add(
-                android.content.ContentProviderOperation
-                    .newInsert(ContactsContract.Data.CONTENT_URI)
+                android.content.ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                     .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
                     .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE)
                     .withValue(ContactsContract.CommonDataKinds.Organization.COMPANY, contactData.getString("organizationName"))
@@ -638,8 +635,7 @@ public class CapacitorContactsPlugin extends Plugin {
         // Add note
         if (contactData.has("note")) {
             ops.add(
-                android.content.ContentProviderOperation
-                    .newInsert(ContactsContract.Data.CONTENT_URI)
+                android.content.ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                     .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
                     .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE)
                     .withValue(ContactsContract.CommonDataKinds.Note.NOTE, contactData.getString("note"))
@@ -658,8 +654,7 @@ public class CapacitorContactsPlugin extends Plugin {
                     String label = email.optString("label");
 
                     ops.add(
-                        android.content.ContentProviderOperation
-                            .newInsert(ContactsContract.Data.CONTENT_URI)
+                        android.content.ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
                             .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
                             .withValue(ContactsContract.CommonDataKinds.Email.ADDRESS, value)
@@ -684,8 +679,7 @@ public class CapacitorContactsPlugin extends Plugin {
                     String label = phone.optString("label");
 
                     ops.add(
-                        android.content.ContentProviderOperation
-                            .newInsert(ContactsContract.Data.CONTENT_URI)
+                        android.content.ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
                             .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
                             .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, value)
@@ -707,8 +701,7 @@ public class CapacitorContactsPlugin extends Plugin {
                     org.json.JSONObject address = addresses.getJSONObject(i);
 
                     ops.add(
-                        android.content.ContentProviderOperation
-                            .newInsert(ContactsContract.Data.CONTENT_URI)
+                        android.content.ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
                             .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE)
                             .withValue(ContactsContract.CommonDataKinds.StructuredPostal.STREET, address.optString("street"))
@@ -737,8 +730,7 @@ public class CapacitorContactsPlugin extends Plugin {
                     org.json.JSONObject url = urls.getJSONObject(i);
 
                     ops.add(
-                        android.content.ContentProviderOperation
-                            .newInsert(ContactsContract.Data.CONTENT_URI)
+                        android.content.ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
                             .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE)
                             .withValue(ContactsContract.CommonDataKinds.Website.URL, url.optString("value"))
@@ -804,8 +796,7 @@ public class CapacitorContactsPlugin extends Plugin {
 
         // Delete existing data
         ops.add(
-            android.content.ContentProviderOperation
-                .newDelete(ContactsContract.Data.CONTENT_URI)
+            android.content.ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)
                 .withSelection(ContactsContract.Data.RAW_CONTACT_ID + " = ?", new String[] { rawContactId })
                 .build()
         );
@@ -822,8 +813,7 @@ public class CapacitorContactsPlugin extends Plugin {
             contactData.has("nameSuffix")
         ) {
             ops.add(
-                android.content.ContentProviderOperation
-                    .newInsert(ContactsContract.Data.CONTENT_URI)
+                android.content.ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                     .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactIdValue)
                     .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
                     .withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, contactData.getString("givenName"))
@@ -839,8 +829,7 @@ public class CapacitorContactsPlugin extends Plugin {
         // Add organization
         if (contactData.has("organizationName") || contactData.has("jobTitle")) {
             ops.add(
-                android.content.ContentProviderOperation
-                    .newInsert(ContactsContract.Data.CONTENT_URI)
+                android.content.ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                     .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactIdValue)
                     .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE)
                     .withValue(ContactsContract.CommonDataKinds.Organization.COMPANY, contactData.getString("organizationName"))
@@ -852,8 +841,7 @@ public class CapacitorContactsPlugin extends Plugin {
         // Add note
         if (contactData.has("note")) {
             ops.add(
-                android.content.ContentProviderOperation
-                    .newInsert(ContactsContract.Data.CONTENT_URI)
+                android.content.ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                     .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactIdValue)
                     .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE)
                     .withValue(ContactsContract.CommonDataKinds.Note.NOTE, contactData.getString("note"))
@@ -868,8 +856,7 @@ public class CapacitorContactsPlugin extends Plugin {
                 for (int i = 0; i < emails.length(); i++) {
                     org.json.JSONObject email = emails.getJSONObject(i);
                     ops.add(
-                        android.content.ContentProviderOperation
-                            .newInsert(ContactsContract.Data.CONTENT_URI)
+                        android.content.ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactIdValue)
                             .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
                             .withValue(ContactsContract.CommonDataKinds.Email.ADDRESS, email.optString("value"))
@@ -889,8 +876,7 @@ public class CapacitorContactsPlugin extends Plugin {
                 for (int i = 0; i < phones.length(); i++) {
                     org.json.JSONObject phone = phones.getJSONObject(i);
                     ops.add(
-                        android.content.ContentProviderOperation
-                            .newInsert(ContactsContract.Data.CONTENT_URI)
+                        android.content.ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                             .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactIdValue)
                             .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
                             .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, phone.optString("value"))
