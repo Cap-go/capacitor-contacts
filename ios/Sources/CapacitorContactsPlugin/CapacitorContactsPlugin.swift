@@ -54,10 +54,9 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func getContacts(_ call: CAPPluginCall) {
         ensureAuthorized(call) {
-            let options = (call.options["options"] as? JSObject) ?? [:]
-            let fields = (options["fields"] as? [String]).map { Set($0) }
-            let limit = options["limit"] as? Int
-            let offset = options["offset"] as? Int ?? 0
+            let fields = (call.options["fields"] as? [String]).map { Set($0) }
+            let limit = call.options["limit"] as? Int
+            let offset = call.options["offset"] as? Int ?? 0
 
             let keysToFetch = self.keysToFetch(for: fields)
             let request = CNContactFetchRequest(keysToFetch: keysToFetch)
@@ -95,13 +94,13 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func getContactById(_ call: CAPPluginCall) {
-        guard let options = call.options["options"] as? JSObject, let identifier = options["id"] as? String else {
+        guard let identifier = call.options["id"] as? String else {
             call.reject("Missing contact identifier.")
             return
         }
 
         ensureAuthorized(call) {
-            let fields = (options["fields"] as? [String]).map { Set($0) }
+            let fields = (call.options["fields"] as? [String]).map { Set($0) }
             let keysToFetch = self.keysToFetch(for: fields)
 
             do {
@@ -164,7 +163,7 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc override public func requestPermissions(_ call: CAPPluginCall) {
-        let requested = (call.options["options"] as? JSObject)?["permissions"] as? [String] ?? ["readContacts", "writeContacts"]
+        let requested = (call.options["permissions"] as? [String]) ?? ["readContacts", "writeContacts"]
         let needsRequest = requested.contains { _ in mapAuthorizationStatus(CNContactStore.authorizationStatus(for: .contacts)) != "granted" }
 
         if !needsRequest {
@@ -187,8 +186,7 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
     // MARK: - Write operations
 
     @objc func createContact(_ call: CAPPluginCall) {
-        guard let options = call.options["options"] as? JSObject,
-              let contactData = options["contact"] as? JSObject else {
+        guard let contactData = call.options["contact"] as? JSObject else {
             call.reject("Missing contact data.")
             return
         }
@@ -210,16 +208,15 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func updateContactById(_ call: CAPPluginCall) {
-        guard let options = call.options["options"] as? JSObject,
-              let identifier = options["id"] as? String,
-              let contactData = options["contact"] as? JSObject else {
+        guard let identifier = call.options["id"] as? String,
+              let contactData = call.options["contact"] as? JSObject else {
             call.reject("Missing contact identifier or data.")
             return
         }
 
         ensureAuthorized(call) {
             do {
-                let keysToFetch: [CNKeyDescriptor] = [
+                var keysToFetch: [CNKeyDescriptor] = [
                     CNContactIdentifierKey as CNKeyDescriptor,
                     CNContactGivenNameKey as CNKeyDescriptor,
                     CNContactFamilyNameKey as CNKeyDescriptor,
@@ -233,9 +230,12 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
                     CNContactPostalAddressesKey as CNKeyDescriptor,
                     CNContactUrlAddressesKey as CNKeyDescriptor,
                     CNContactBirthdayKey as CNKeyDescriptor,
-                    CNContactNoteKey as CNKeyDescriptor,
                     CNContactImageDataKey as CNKeyDescriptor
                 ]
+
+                if contactData["note"] != nil {
+                    keysToFetch.append(CNContactNoteKey as CNKeyDescriptor)
+                }
 
                 let contact = try self.contactStore.unifiedContact(withIdentifier: identifier, keysToFetch: keysToFetch)
                 let mutableContact = contact.mutableCopy() as! CNMutableContact
@@ -254,8 +254,7 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func deleteContactById(_ call: CAPPluginCall) {
-        guard let options = call.options["options"] as? JSObject,
-              let identifier = options["id"] as? String else {
+        guard let identifier = call.options["id"] as? String else {
             call.reject("Missing contact identifier.")
             return
         }
@@ -297,8 +296,7 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func getGroupById(_ call: CAPPluginCall) {
-        guard let options = call.options["options"] as? JSObject,
-              let identifier = options["id"] as? String else {
+        guard let identifier = call.options["id"] as? String else {
             call.reject("Missing group identifier.")
             return
         }
@@ -321,8 +319,7 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func createGroup(_ call: CAPPluginCall) {
-        guard let options = call.options["options"] as? JSObject,
-              let groupData = options["group"] as? JSObject,
+        guard let groupData = call.options["group"] as? JSObject,
               let name = groupData["name"] as? String else {
             call.reject("Missing group name.")
             return
@@ -345,8 +342,7 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func deleteGroupById(_ call: CAPPluginCall) {
-        guard let options = call.options["options"] as? JSObject,
-              let identifier = options["id"] as? String else {
+        guard let identifier = call.options["id"] as? String else {
             call.reject("Missing group identifier.")
             return
         }
@@ -392,8 +388,7 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func displayContactById(_ call: CAPPluginCall) {
-        guard let options = call.options["options"] as? JSObject,
-              let identifier = options["id"] as? String else {
+        guard let identifier = call.options["id"] as? String else {
             call.reject("Missing contact identifier.")
             return
         }
@@ -420,8 +415,7 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
         DispatchQueue.main.async {
             let newContact = CNMutableContact()
 
-            if let options = call.options["options"] as? JSObject,
-               let contactData = options["contact"] as? JSObject {
+            if let contactData = call.options["contact"] as? JSObject {
                 self.populateContact(newContact, from: contactData)
             }
 
@@ -436,8 +430,7 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func displayUpdateContactById(_ call: CAPPluginCall) {
-        guard let options = call.options["options"] as? JSObject,
-              let identifier = options["id"] as? String else {
+        guard let identifier = call.options["id"] as? String else {
             call.reject("Missing contact identifier.")
             return
         }
@@ -515,29 +508,35 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
 
     private func keysToFetch(for fields: Set<String>?) -> [CNKeyDescriptor] {
         var keys: [CNKeyDescriptor] = [
-            CNContactIdentifierKey as CNKeyDescriptor,
-            CNContactGivenNameKey as CNKeyDescriptor,
-            CNContactFamilyNameKey as CNKeyDescriptor,
-            CNContactMiddleNameKey as CNKeyDescriptor,
-            CNContactNamePrefixKey as CNKeyDescriptor,
-            CNContactNameSuffixKey as CNKeyDescriptor,
-            CNContactOrganizationNameKey as CNKeyDescriptor,
-            CNContactJobTitleKey as CNKeyDescriptor,
-            CNContactEmailAddressesKey as CNKeyDescriptor,
-            CNContactPhoneNumbersKey as CNKeyDescriptor,
-            CNContactPostalAddressesKey as CNKeyDescriptor,
-            CNContactUrlAddressesKey as CNKeyDescriptor,
-            CNContactBirthdayKey as CNKeyDescriptor,
-            CNContactNoteKey as CNKeyDescriptor,
-            CNContactImageDataAvailableKey as CNKeyDescriptor,
-            CNContactImageDataKey as CNKeyDescriptor
+            CNContactIdentifierKey as CNKeyDescriptor
         ]
+
+        let shouldFetchAll = fields == nil
+
+        if shouldFetchAll || fields!.contains("givenName") { keys.append(CNContactGivenNameKey as CNKeyDescriptor) }
+        if shouldFetchAll || fields!.contains("familyName") { keys.append(CNContactFamilyNameKey as CNKeyDescriptor) }
+        if shouldFetchAll || fields!.contains("middleName") { keys.append(CNContactMiddleNameKey as CNKeyDescriptor) }
+        if shouldFetchAll || fields!.contains("namePrefix") { keys.append(CNContactNamePrefixKey as CNKeyDescriptor) }
+        if shouldFetchAll || fields!.contains("nameSuffix") { keys.append(CNContactNameSuffixKey as CNKeyDescriptor) }
+        if shouldFetchAll || fields!.contains("organizationName") { keys.append(CNContactOrganizationNameKey as CNKeyDescriptor) }
+        if shouldFetchAll || fields!.contains("jobTitle") { keys.append(CNContactJobTitleKey as CNKeyDescriptor) }
+        if shouldFetchAll || fields!.contains("emailAddresses") { keys.append(CNContactEmailAddressesKey as CNKeyDescriptor) }
+        if shouldFetchAll || fields!.contains("phoneNumbers") { keys.append(CNContactPhoneNumbersKey as CNKeyDescriptor) }
+        if shouldFetchAll || fields!.contains("postalAddresses") { keys.append(CNContactPostalAddressesKey as CNKeyDescriptor) }
+        if shouldFetchAll || fields!.contains("urlAddresses") { keys.append(CNContactUrlAddressesKey as CNKeyDescriptor) }
+        if shouldFetchAll || fields!.contains("birthday") { keys.append(CNContactBirthdayKey as CNKeyDescriptor) }
+        if shouldFetchAll || fields!.contains("note") { keys.append(CNContactNoteKey as CNKeyDescriptor) }
+        
+        if shouldFetchAll || fields!.contains("photo") {
+            keys.append(CNContactImageDataAvailableKey as CNKeyDescriptor)
+            keys.append(CNContactImageDataKey as CNKeyDescriptor)
+        }
 
         if let fields, fields.contains("groupIds") {
             // No additional keys required, but this preserves the behaviour if custom keys are needed later.
         }
 
-        if let fields, fields.contains("fullName") {
+        if shouldFetchAll || fields!.contains("fullName") {
             keys.append(CNContactFormatter.descriptorForRequiredKeys(for: .fullName))
         }
 
