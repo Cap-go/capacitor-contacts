@@ -1121,35 +1121,7 @@ public class CapacitorContactsPlugin extends Plugin {
         selection.append(")");
 
         if (fields != null) {
-            List<String> mimeTypes = new ArrayList<>();
-            mimeTypes.add(ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE);
-            if (fields.contains("organizationName") || fields.contains("jobTitle")) {
-                mimeTypes.add(ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE);
-            }
-            if (fields.contains("emailAddresses")) {
-                mimeTypes.add(ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE);
-            }
-            if (fields.contains("phoneNumbers")) {
-                mimeTypes.add(ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
-            }
-            if (fields.contains("postalAddresses")) {
-                mimeTypes.add(ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE);
-            }
-            if (fields.contains("urlAddresses")) {
-                mimeTypes.add(ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE);
-            }
-            if (fields.contains("note")) {
-                mimeTypes.add(ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE);
-            }
-            if (fields.contains("birthday")) {
-                mimeTypes.add(ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE);
-            }
-            if (fields.contains("groupIds")) {
-                mimeTypes.add(ContactsContract.CommonDataKinds.GroupMembership.CONTENT_ITEM_TYPE);
-            }
-            if (fields.contains("photo")) {
-                mimeTypes.add(ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE);
-            }
+            List<String> mimeTypes = getMimeTypesForFields(fields);
 
             if (!mimeTypes.isEmpty()) {
                 StringBuilder mimeSelection = new StringBuilder();
@@ -1237,37 +1209,7 @@ public class CapacitorContactsPlugin extends Plugin {
         selectionArgs.add(contactId);
 
         if (fields != null) {
-            List<String> mimeTypes = new ArrayList<>();
-            // Always fetch structured name for basic display
-            mimeTypes.add(ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE);
-
-            if (fields.contains("organizationName") || fields.contains("jobTitle")) {
-                mimeTypes.add(ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE);
-            }
-            if (fields.contains("emailAddresses")) {
-                mimeTypes.add(ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE);
-            }
-            if (fields.contains("phoneNumbers")) {
-                mimeTypes.add(ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
-            }
-            if (fields.contains("postalAddresses")) {
-                mimeTypes.add(ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE);
-            }
-            if (fields.contains("urlAddresses")) {
-                mimeTypes.add(ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE);
-            }
-            if (fields.contains("note")) {
-                mimeTypes.add(ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE);
-            }
-            if (fields.contains("birthday")) {
-                mimeTypes.add(ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE);
-            }
-            if (fields.contains("groupIds")) {
-                mimeTypes.add(ContactsContract.CommonDataKinds.GroupMembership.CONTENT_ITEM_TYPE);
-            }
-            if (fields.contains("photo")) {
-                mimeTypes.add(ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE);
-            }
+            List<String> mimeTypes = getMimeTypesForFields(fields);
 
             if (!mimeTypes.isEmpty()) {
                 StringBuilder mimeSelection = new StringBuilder();
@@ -1455,6 +1397,46 @@ public class CapacitorContactsPlugin extends Plugin {
             // Return empty set if parsing fails
         }
         return fields.isEmpty() ? null : fields;
+    }
+
+    private List<String> getMimeTypesForFields(Set<String> fields) {
+        List<String> mimeTypes = new ArrayList<>();
+        // Always fetch structured name for basic display
+        mimeTypes.add(ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE);
+
+        if (fields == null) {
+            return mimeTypes;
+        }
+
+        if (fields.contains("organizationName") || fields.contains("jobTitle")) {
+            mimeTypes.add(ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE);
+        }
+        if (fields.contains("emailAddresses")) {
+            mimeTypes.add(ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE);
+        }
+        if (fields.contains("phoneNumbers")) {
+            mimeTypes.add(ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
+        }
+        if (fields.contains("postalAddresses")) {
+            mimeTypes.add(ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE);
+        }
+        if (fields.contains("urlAddresses")) {
+            mimeTypes.add(ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE);
+        }
+        if (fields.contains("note")) {
+            mimeTypes.add(ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE);
+        }
+        if (fields.contains("birthday")) {
+            mimeTypes.add(ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE);
+        }
+        if (fields.contains("groupIds")) {
+            mimeTypes.add(ContactsContract.CommonDataKinds.GroupMembership.CONTENT_ITEM_TYPE);
+        }
+        if (fields.contains("photo")) {
+            mimeTypes.add(ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE);
+        }
+
+        return mimeTypes;
     }
 
     // MARK: - Contact builder helper
