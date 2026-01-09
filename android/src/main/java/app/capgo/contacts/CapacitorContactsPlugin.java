@@ -40,6 +40,7 @@ import java.util.Set;
 public class CapacitorContactsPlugin extends Plugin {
 
     private final String pluginVersion = "8.0.4";
+    private static final int BATCH_SIZE = 50;
 
     // MARK: - Implemented API surface
 
@@ -76,15 +77,15 @@ public class CapacitorContactsPlugin extends Plugin {
             return;
         }
 
-        JSObject options = call.getObject("options", new JSObject());
-        Integer limit = options.has("limit") ? options.getInteger("limit") : null;
-        Integer offset = options.has("offset") ? options.getInteger("offset") : null;
+        Integer limit = call.getInt("limit", null);
+        Integer offset = call.getInt("offset", null);
+        Set<String> fields = parseFieldsArray(call);
 
         try {
-            List<ContactBuilder> builders = fetchContacts(limit, offset);
+            List<ContactBuilder> builders = fetchContacts(limit, offset, fields);
             JSArray contacts = new JSArray();
             for (ContactBuilder builder : builders) {
-                contacts.put(builder.toJSObject());
+                contacts.put(builder.toJSObject(fields));
             }
             JSObject result = new JSObject();
             result.put("contacts", contacts);
@@ -101,21 +102,22 @@ public class CapacitorContactsPlugin extends Plugin {
             return;
         }
 
-        JSObject options = call.getObject("options", new JSObject());
-        String identifier = options.getString("id");
+        String identifier = call.getString("id");
         if (identifier == null) {
             call.reject("Missing contact identifier.");
             return;
         }
 
         try {
-            ContactBuilder builder = fetchContact(identifier);
+            Set<String> fields = parseFieldsArray(call);
+            ContactBuilder builder = fetchContact(identifier, fields);
             if (builder == null) {
                 call.resolve(new JSObject().put("contact", null));
                 return;
             }
+
             JSObject result = new JSObject();
-            result.put("contact", builder.toJSObject());
+            result.put("contact", builder.toJSObject(fields));
             call.resolve(result);
         } catch (Exception ex) {
             call.reject("Failed to fetch contact.", null, ex);
@@ -215,8 +217,7 @@ public class CapacitorContactsPlugin extends Plugin {
             return;
         }
 
-        JSObject options = call.getObject("options", new JSObject());
-        JSObject contactData = options.getJSObject("contact");
+        JSObject contactData = call.getObject("contact");
         if (contactData == null) {
             call.reject("Missing contact data.");
             return;
@@ -237,9 +238,8 @@ public class CapacitorContactsPlugin extends Plugin {
             return;
         }
 
-        JSObject options = call.getObject("options", new JSObject());
-        String contactId = options.getString("id");
-        JSObject contactData = options.getJSObject("contact");
+        String contactId = call.getString("id");
+        JSObject contactData = call.getObject("contact");
 
         if (contactId == null || contactData == null) {
             call.reject("Missing contact identifier or data.");
@@ -261,8 +261,7 @@ public class CapacitorContactsPlugin extends Plugin {
             return;
         }
 
-        JSObject options = call.getObject("options", new JSObject());
-        String contactId = options.getString("id");
+        String contactId = call.getString("id");
 
         if (contactId == null) {
             call.reject("Missing contact identifier.");
@@ -327,8 +326,7 @@ public class CapacitorContactsPlugin extends Plugin {
             return;
         }
 
-        JSObject options = call.getObject("options", new JSObject());
-        String groupId = options.getString("id");
+        String groupId = call.getString("id");
 
         if (groupId == null) {
             call.reject("Missing group identifier.");
@@ -368,8 +366,7 @@ public class CapacitorContactsPlugin extends Plugin {
             return;
         }
 
-        JSObject options = call.getObject("options", new JSObject());
-        JSObject groupData = options.getJSObject("group");
+        JSObject groupData = call.getObject("group");
 
         if (groupData == null) {
             call.reject("Missing group data.");
@@ -411,8 +408,7 @@ public class CapacitorContactsPlugin extends Plugin {
             return;
         }
 
-        JSObject options = call.getObject("options", new JSObject());
-        String groupId = options.getString("id");
+        String groupId = call.getString("id");
 
         if (groupId == null) {
             call.reject("Missing group identifier.");
@@ -462,8 +458,7 @@ public class CapacitorContactsPlugin extends Plugin {
 
     @PluginMethod
     public void displayContactById(PluginCall call) {
-        JSObject options = call.getObject("options", new JSObject());
-        String contactId = options.getString("id");
+        String contactId = call.getString("id");
 
         if (contactId == null) {
             call.reject("Missing contact identifier.");
@@ -485,12 +480,9 @@ public class CapacitorContactsPlugin extends Plugin {
         currentPickerCall = call;
         Intent intent = new Intent(Intent.ACTION_INSERT, ContactsContract.Contacts.CONTENT_URI);
 
-        JSObject options = call.getObject("options", new JSObject());
-        if (options != null) {
-            JSObject contactData = options.getJSObject("contact");
-            if (contactData != null) {
-                populateIntent(intent, contactData);
-            }
+        JSObject contactData = call.getObject("contact");
+        if (contactData != null) {
+            populateIntent(intent, contactData);
         }
 
         startActivityForResult(call, intent, CREATE_CONTACT_REQUEST);
@@ -498,8 +490,7 @@ public class CapacitorContactsPlugin extends Plugin {
 
     @PluginMethod
     public void displayUpdateContactById(PluginCall call) {
-        JSObject options = call.getObject("options", new JSObject());
-        String contactId = options.getString("id");
+        String contactId = call.getString("id");
 
         if (contactId == null) {
             call.reject("Missing contact identifier.");
@@ -542,10 +533,10 @@ public class CapacitorContactsPlugin extends Plugin {
                 if (data != null && data.getData() != null) {
                     String contactId = getContactIdFromUri(data.getData());
                     if (contactId != null) {
-                        ContactBuilder builder = fetchContact(contactId);
+                        ContactBuilder builder = fetchContact(contactId, null);
                         if (builder != null) {
                             JSArray contacts = new JSArray();
-                            contacts.put(builder.toJSObject());
+                            contacts.put(builder.toJSObject(null));
                             call.resolve(new JSObject().put("contacts", contacts));
                         } else {
                             call.resolve(new JSObject().put("contacts", new JSArray()));
@@ -1061,8 +1052,8 @@ public class CapacitorContactsPlugin extends Plugin {
 
     // MARK: - Contact access helpers
 
-    private List<ContactBuilder> fetchContacts(Integer limit, Integer offset) {
-        List<ContactBuilder> builders = new ArrayList<>();
+    private List<ContactBuilder> fetchContacts(Integer limit, Integer offset, Set<String> fields) {
+        Map<String, ContactBuilder> builderMap = new java.util.LinkedHashMap<>();
         ContentResolver resolver = getContext().getContentResolver();
 
         Uri queryUri = ContactsContract.Contacts.CONTENT_URI;
@@ -1086,33 +1077,160 @@ public class CapacitorContactsPlugin extends Plugin {
             )
         ) {
             if (cursor == null) {
-                return builders;
+                return new ArrayList<>();
             }
 
             while (cursor.moveToNext()) {
                 String id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID));
-                ContactBuilder contact = fetchContact(id);
-                if (contact != null) {
-                    contact.fullName = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY));
-                    builders.add(contact);
+                String displayName = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY));
+                ContactBuilder builder = new ContactBuilder(id);
+                builder.fullName = displayName;
+                builderMap.put(id, builder);
+            }
+        }
+
+        if (!builderMap.isEmpty()) {
+            List<String> allIds = new ArrayList<>(builderMap.keySet());
+
+            for (int i = 0; i < allIds.size(); i += BATCH_SIZE) {
+                List<String> batchIds = allIds.subList(i, Math.min(i + BATCH_SIZE, allIds.size()));
+                fillContactData(builderMap, batchIds, fields);
+            }
+
+            if (fields == null || fields.contains("account")) {
+                for (int i = 0; i < allIds.size(); i += BATCH_SIZE) {
+                    List<String> batchIds = allIds.subList(i, Math.min(i + BATCH_SIZE, allIds.size()));
+                    fillAccountInfo(builderMap, batchIds);
                 }
             }
         }
 
-        return builders;
+        return new ArrayList<>(builderMap.values());
     }
 
-    private ContactBuilder fetchContact(@NonNull String contactId) {
+    private void fillContactData(Map<String, ContactBuilder> builderMap, List<String> batchIds, Set<String> fields) {
+        ContentResolver resolver = getContext().getContentResolver();
+        List<String> selectionArgs = new ArrayList<>(batchIds);
+        StringBuilder selection = new StringBuilder();
+
+        selection.append(ContactsContract.Data.CONTACT_ID + " IN (");
+        for (int i = 0; i < batchIds.size(); i++) {
+            if (i > 0) selection.append(",");
+            selection.append("?");
+        }
+        selection.append(")");
+
+        if (fields != null) {
+            List<String> mimeTypes = getMimeTypesForFields(fields);
+
+            if (!mimeTypes.isEmpty()) {
+                StringBuilder mimeSelection = new StringBuilder();
+                mimeSelection.append(" AND " + ContactsContract.Data.MIMETYPE + " IN (");
+                for (int i = 0; i < mimeTypes.size(); i++) {
+                    if (i > 0) mimeSelection.append(",");
+                    mimeSelection.append("?");
+                    selectionArgs.add(mimeTypes.get(i));
+                }
+                mimeSelection.append(")");
+                selection.append(mimeSelection.toString());
+            }
+        }
+
+        try (
+            Cursor dataCursor = resolver.query(
+                ContactsContract.Data.CONTENT_URI,
+                null,
+                selection.toString(),
+                selectionArgs.toArray(new String[0]),
+                null
+            )
+        ) {
+            if (dataCursor != null) {
+                while (dataCursor.moveToNext()) {
+                    String contactId = dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.Data.CONTACT_ID));
+                    ContactBuilder builder = builderMap.get(contactId);
+                    if (builder != null) {
+                        processDataRow(builder, dataCursor);
+                    }
+                }
+            }
+        }
+    }
+
+    private void fillAccountInfo(Map<String, ContactBuilder> builderMap, List<String> batchIds) {
+        ContentResolver resolver = getContext().getContentResolver();
+        List<String> selectionArgs = new ArrayList<>(batchIds);
+        StringBuilder selection = new StringBuilder();
+
+        selection.append(ContactsContract.RawContacts.CONTACT_ID + " IN (");
+        for (int i = 0; i < batchIds.size(); i++) {
+            if (i > 0) selection.append(",");
+            selection.append("?");
+        }
+        selection.append(")");
+
+        try (
+            Cursor rawCursor = resolver.query(
+                ContactsContract.RawContacts.CONTENT_URI,
+                new String[] {
+                    ContactsContract.RawContacts.CONTACT_ID,
+                    ContactsContract.RawContacts.ACCOUNT_NAME,
+                    ContactsContract.RawContacts.ACCOUNT_TYPE
+                },
+                selection.toString(),
+                selectionArgs.toArray(new String[0]),
+                null
+            )
+        ) {
+            if (rawCursor != null) {
+                while (rawCursor.moveToNext()) {
+                    String contactId = rawCursor.getString(rawCursor.getColumnIndexOrThrow(ContactsContract.RawContacts.CONTACT_ID));
+                    ContactBuilder builder = builderMap.get(contactId);
+                    if (builder != null && builder.accountName == null) {
+                        builder.accountName = rawCursor.getString(
+                            rawCursor.getColumnIndexOrThrow(ContactsContract.RawContacts.ACCOUNT_NAME)
+                        );
+                        builder.accountType = rawCursor.getString(
+                            rawCursor.getColumnIndexOrThrow(ContactsContract.RawContacts.ACCOUNT_TYPE)
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    private ContactBuilder fetchContact(@NonNull String contactId, Set<String> fields) {
         ContentResolver resolver = getContext().getContentResolver();
         ContactBuilder builder = new ContactBuilder(contactId);
+
+        // Build selection based on fields
+        String selection = ContactsContract.Data.CONTACT_ID + " = ?";
+        List<String> selectionArgs = new ArrayList<>();
+        selectionArgs.add(contactId);
+
+        if (fields != null) {
+            List<String> mimeTypes = getMimeTypesForFields(fields);
+
+            if (!mimeTypes.isEmpty()) {
+                StringBuilder mimeSelection = new StringBuilder();
+                mimeSelection.append(" AND " + ContactsContract.Data.MIMETYPE + " IN (");
+                for (int i = 0; i < mimeTypes.size(); i++) {
+                    if (i > 0) mimeSelection.append(",");
+                    mimeSelection.append("?");
+                    selectionArgs.add(mimeTypes.get(i));
+                }
+                mimeSelection.append(")");
+                selection += mimeSelection.toString();
+            }
+        }
 
         // Structured name, emails, phones, etc.
         try (
             Cursor dataCursor = resolver.query(
                 ContactsContract.Data.CONTENT_URI,
                 null,
-                ContactsContract.Data.CONTACT_ID + " = ?",
-                new String[] { contactId },
+                selection,
+                selectionArgs.toArray(new String[0]),
                 null
             )
         ) {
@@ -1121,128 +1239,27 @@ public class CapacitorContactsPlugin extends Plugin {
             }
 
             while (dataCursor.moveToNext()) {
-                String mimeType = dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.Data.MIMETYPE));
-                switch (mimeType) {
-                    case ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE:
-                        builder.givenName = dataCursor.getString(
-                            dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME)
-                        );
-                        builder.familyName = dataCursor.getString(
-                            dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME)
-                        );
-                        builder.middleName = dataCursor.getString(
-                            dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME)
-                        );
-                        builder.namePrefix = dataCursor.getString(
-                            dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredName.PREFIX)
-                        );
-                        builder.nameSuffix = dataCursor.getString(
-                            dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredName.SUFFIX)
-                        );
-                        break;
-                    case ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE:
-                        builder.addEmail(
-                            dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Email.ADDRESS)),
-                            dataCursor.getInt(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Email.TYPE)),
-                            dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Email.LABEL)),
-                            dataCursor.getInt(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Email.IS_PRIMARY)) == 1
-                        );
-                        break;
-                    case ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE:
-                        builder.addPhone(
-                            dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER)),
-                            dataCursor.getInt(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.TYPE)),
-                            dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.LABEL)),
-                            dataCursor.getInt(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.IS_PRIMARY)) == 1
-                        );
-                        break;
-                    case ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE:
-                        builder.addPostalAddress(
-                            dataCursor.getInt(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredPostal.TYPE)),
-                            dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredPostal.LABEL)),
-                            dataCursor.getString(
-                                dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredPostal.STREET)
-                            ),
-                            dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredPostal.CITY)),
-                            dataCursor.getString(
-                                dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredPostal.REGION)
-                            ),
-                            dataCursor.getString(
-                                dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredPostal.POSTCODE)
-                            ),
-                            dataCursor.getString(
-                                dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredPostal.COUNTRY)
-                            ),
-                            dataCursor.getString(
-                                dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredPostal.NEIGHBORHOOD)
-                            ),
-                            dataCursor.getInt(
-                                    dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredPostal.IS_PRIMARY)
-                                ) ==
-                                1
-                        );
-                        break;
-                    case ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE:
-                        builder.addUrlAddress(
-                            dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Website.URL)),
-                            dataCursor.getInt(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Website.TYPE)),
-                            dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Website.LABEL))
-                        );
-                        break;
-                    case ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE:
-                        builder.organizationName = dataCursor.getString(
-                            dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Organization.COMPANY)
-                        );
-                        builder.jobTitle = dataCursor.getString(
-                            dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Organization.TITLE)
-                        );
-                        break;
-                    case ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE:
-                        builder.note = dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Note.NOTE));
-                        break;
-                    case ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE:
-                        int eventType = dataCursor.getInt(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Event.TYPE));
-                        if (eventType == ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY) {
-                            builder.setBirthday(
-                                dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Event.START_DATE))
-                            );
-                        }
-                        break;
-                    case ContactsContract.CommonDataKinds.GroupMembership.CONTENT_ITEM_TYPE:
-                        long groupId = dataCursor.getLong(
-                            dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID)
-                        );
-                        builder.addGroupId(String.valueOf(groupId));
-                        break;
-                    case ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE:
-                        byte[] photoData = dataCursor.getBlob(
-                            dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Photo.PHOTO)
-                        );
-                        if (photoData != null) {
-                            builder.photoBase64 = Base64.encodeToString(photoData, Base64.NO_WRAP);
-                        }
-                        break;
-                    default:
-                        break;
-                }
+                processDataRow(builder, dataCursor);
             }
         }
 
-        // Account information
-        try (
-            Cursor rawCursor = resolver.query(
-                ContactsContract.RawContacts.CONTENT_URI,
-                new String[] { ContactsContract.RawContacts.ACCOUNT_NAME, ContactsContract.RawContacts.ACCOUNT_TYPE },
-                ContactsContract.RawContacts.CONTACT_ID + " = ?",
-                new String[] { contactId },
-                null
-            )
-        ) {
-            if (rawCursor != null && rawCursor.moveToFirst()) {
-                String accountName = rawCursor.getString(rawCursor.getColumnIndexOrThrow(ContactsContract.RawContacts.ACCOUNT_NAME));
-                String accountType = rawCursor.getString(rawCursor.getColumnIndexOrThrow(ContactsContract.RawContacts.ACCOUNT_TYPE));
-                builder.accountName = accountName;
-                builder.accountType = accountType;
+        // Account information (only if fields allow)
+        if (fields == null || fields.contains("account")) {
+            try (
+                Cursor rawCursor = resolver.query(
+                    ContactsContract.RawContacts.CONTENT_URI,
+                    new String[] { ContactsContract.RawContacts.ACCOUNT_NAME, ContactsContract.RawContacts.ACCOUNT_TYPE },
+                    ContactsContract.RawContacts.CONTACT_ID + " = ?",
+                    new String[] { contactId },
+                    null
+                )
+            ) {
+                if (rawCursor != null && rawCursor.moveToFirst()) {
+                    String accountName = rawCursor.getString(rawCursor.getColumnIndexOrThrow(ContactsContract.RawContacts.ACCOUNT_NAME));
+                    String accountType = rawCursor.getString(rawCursor.getColumnIndexOrThrow(ContactsContract.RawContacts.ACCOUNT_TYPE));
+                    builder.accountName = accountName;
+                    builder.accountType = accountType;
+                }
             }
         }
 
@@ -1251,6 +1268,98 @@ public class CapacitorContactsPlugin extends Plugin {
         }
 
         return builder;
+    }
+
+    private void processDataRow(ContactBuilder builder, Cursor dataCursor) {
+        String mimeType = dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.Data.MIMETYPE));
+        switch (mimeType) {
+            case ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE:
+                builder.givenName = dataCursor.getString(
+                    dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME)
+                );
+                builder.familyName = dataCursor.getString(
+                    dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME)
+                );
+                builder.middleName = dataCursor.getString(
+                    dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME)
+                );
+                builder.namePrefix = dataCursor.getString(
+                    dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredName.PREFIX)
+                );
+                builder.nameSuffix = dataCursor.getString(
+                    dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredName.SUFFIX)
+                );
+                break;
+            case ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE:
+                builder.addEmail(
+                    dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Email.ADDRESS)),
+                    dataCursor.getInt(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Email.TYPE)),
+                    dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Email.LABEL)),
+                    dataCursor.getInt(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Email.IS_PRIMARY)) == 1
+                );
+                break;
+            case ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE:
+                builder.addPhone(
+                    dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER)),
+                    dataCursor.getInt(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.TYPE)),
+                    dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.LABEL)),
+                    dataCursor.getInt(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.IS_PRIMARY)) == 1
+                );
+                break;
+            case ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE:
+                builder.addPostalAddress(
+                    dataCursor.getInt(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredPostal.TYPE)),
+                    dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredPostal.LABEL)),
+                    dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredPostal.STREET)),
+                    dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredPostal.CITY)),
+                    dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredPostal.REGION)),
+                    dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredPostal.POSTCODE)),
+                    dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredPostal.COUNTRY)),
+                    dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredPostal.NEIGHBORHOOD)),
+                    dataCursor.getInt(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredPostal.IS_PRIMARY)) == 1
+                );
+                break;
+            case ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE:
+                builder.addUrlAddress(
+                    dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Website.URL)),
+                    dataCursor.getInt(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Website.TYPE)),
+                    dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Website.LABEL))
+                );
+                break;
+            case ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE:
+                builder.organizationName = dataCursor.getString(
+                    dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Organization.COMPANY)
+                );
+                builder.jobTitle = dataCursor.getString(
+                    dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Organization.TITLE)
+                );
+                break;
+            case ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE:
+                builder.note = dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Note.NOTE));
+                break;
+            case ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE:
+                int eventType = dataCursor.getInt(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Event.TYPE));
+                if (eventType == ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY) {
+                    builder.setBirthday(
+                        dataCursor.getString(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Event.START_DATE))
+                    );
+                }
+                break;
+            case ContactsContract.CommonDataKinds.GroupMembership.CONTENT_ITEM_TYPE:
+                long groupId = dataCursor.getLong(
+                    dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID)
+                );
+                builder.addGroupId(String.valueOf(groupId));
+                break;
+            case ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE:
+                byte[] photoData = dataCursor.getBlob(dataCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Photo.PHOTO));
+                if (photoData != null) {
+                    builder.photoBase64 = Base64.encodeToString(photoData, Base64.NO_WRAP);
+                }
+                break;
+            default:
+                break;
+        }
     }
 
     private String resolveDisplayName(String contactId) {
@@ -1269,6 +1378,65 @@ public class CapacitorContactsPlugin extends Plugin {
             }
         }
         return null;
+    }
+
+    private Set<String> parseFieldsArray(PluginCall call) {
+        JSArray fieldsArray = call.getArray("fields", null);
+        if (fieldsArray == null) {
+            return null;
+        }
+        Set<String> fields = new HashSet<>();
+        try {
+            List<Object> list = fieldsArray.toList();
+            for (Object item : list) {
+                if (item instanceof String) {
+                    fields.add((String) item);
+                }
+            }
+        } catch (Exception e) {
+            // Return empty set if parsing fails
+        }
+        return fields.isEmpty() ? null : fields;
+    }
+
+    private List<String> getMimeTypesForFields(Set<String> fields) {
+        List<String> mimeTypes = new ArrayList<>();
+        // Always fetch structured name for basic display
+        mimeTypes.add(ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE);
+
+        if (fields == null) {
+            return mimeTypes;
+        }
+
+        if (fields.contains("organizationName") || fields.contains("jobTitle")) {
+            mimeTypes.add(ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE);
+        }
+        if (fields.contains("emailAddresses")) {
+            mimeTypes.add(ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE);
+        }
+        if (fields.contains("phoneNumbers")) {
+            mimeTypes.add(ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
+        }
+        if (fields.contains("postalAddresses")) {
+            mimeTypes.add(ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE);
+        }
+        if (fields.contains("urlAddresses")) {
+            mimeTypes.add(ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE);
+        }
+        if (fields.contains("note")) {
+            mimeTypes.add(ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE);
+        }
+        if (fields.contains("birthday")) {
+            mimeTypes.add(ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE);
+        }
+        if (fields.contains("groupIds")) {
+            mimeTypes.add(ContactsContract.CommonDataKinds.GroupMembership.CONTENT_ITEM_TYPE);
+        }
+        if (fields.contains("photo")) {
+            mimeTypes.add(ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE);
+        }
+
+        return mimeTypes;
     }
 
     // MARK: - Contact builder helper
@@ -1381,36 +1549,50 @@ public class CapacitorContactsPlugin extends Plugin {
             if (startDate == null || startDate.isEmpty()) {
                 return;
             }
-            String[] parts = startDate.split("-");
-            if (parts.length >= 2) {
-                birthdayMonth = safeParse(parts[0]);
-                birthdayDay = safeParse(parts[1]);
-            }
-            if (parts.length >= 3) {
-                birthdayYear = safeParse(parts[2]);
+            // Handle yearless dates: --MM-DD
+            if (startDate.startsWith("--")) {
+                String[] parts = startDate.substring(2).split("-");
+                if (parts.length >= 2) {
+                    birthdayMonth = safeParse(parts[0]);
+                    birthdayDay = safeParse(parts[1]);
+                }
+            } else {
+                // Standard format: YYYY-MM-DD
+                String[] parts = startDate.split("-");
+                if (parts.length >= 3) {
+                    birthdayYear = safeParse(parts[0]);
+                    birthdayMonth = safeParse(parts[1]);
+                    birthdayDay = safeParse(parts[2]);
+                }
             }
         }
 
         JSObject toJSObject() {
-            JSObject contact = new JSObject();
-            contact.put("id", id);
-            contact.put("givenName", givenName);
-            contact.put("familyName", familyName);
-            contact.put("middleName", middleName);
-            contact.put("namePrefix", namePrefix);
-            contact.put("nameSuffix", nameSuffix);
-            contact.put("organizationName", organizationName);
-            contact.put("jobTitle", jobTitle);
-            contact.put("note", note);
-            contact.put("fullName", fullName);
-            contact.put("photo", photoBase64);
-            contact.put("groupIds", groupIds);
-            contact.put("emailAddresses", emailAddresses);
-            contact.put("phoneNumbers", phoneNumbers);
-            contact.put("postalAddresses", postalAddresses);
-            contact.put("urlAddresses", urlAddresses);
+            return toJSObject(null);
+        }
 
-            if (birthdayYear != null || birthdayMonth != null || birthdayDay != null) {
+        JSObject toJSObject(Set<String> fields) {
+            boolean includeAll = fields == null;
+            JSObject contact = new JSObject();
+
+            if (includeAll || fields.contains("id")) contact.put("id", id);
+            if (includeAll || fields.contains("givenName")) contact.put("givenName", givenName);
+            if (includeAll || fields.contains("familyName")) contact.put("familyName", familyName);
+            if (includeAll || fields.contains("middleName")) contact.put("middleName", middleName);
+            if (includeAll || fields.contains("namePrefix")) contact.put("namePrefix", namePrefix);
+            if (includeAll || fields.contains("nameSuffix")) contact.put("nameSuffix", nameSuffix);
+            if (includeAll || fields.contains("organizationName")) contact.put("organizationName", organizationName);
+            if (includeAll || fields.contains("jobTitle")) contact.put("jobTitle", jobTitle);
+            if (includeAll || fields.contains("note")) contact.put("note", note);
+            if (includeAll || fields.contains("fullName")) contact.put("fullName", fullName);
+            if (includeAll || fields.contains("photo")) contact.put("photo", photoBase64);
+            if (includeAll || fields.contains("groupIds")) contact.put("groupIds", groupIds);
+            if (includeAll || fields.contains("emailAddresses")) contact.put("emailAddresses", emailAddresses);
+            if (includeAll || fields.contains("phoneNumbers")) contact.put("phoneNumbers", phoneNumbers);
+            if (includeAll || fields.contains("postalAddresses")) contact.put("postalAddresses", postalAddresses);
+            if (includeAll || fields.contains("urlAddresses")) contact.put("urlAddresses", urlAddresses);
+
+            if ((includeAll || fields.contains("birthday")) && (birthdayYear != null || birthdayMonth != null || birthdayDay != null)) {
                 JSObject birthday = new JSObject();
                 if (birthdayDay != null) birthday.put("day", birthdayDay);
                 if (birthdayMonth != null) birthday.put("month", birthdayMonth);
@@ -1418,13 +1600,15 @@ public class CapacitorContactsPlugin extends Plugin {
                 contact.put("birthday", birthday);
             }
 
-            if (accountName != null || accountType != null) {
-                JSObject account = new JSObject();
-                account.put("name", accountName);
-                account.put("type", accountType);
-                contact.put("account", account);
-            } else {
-                contact.put("account", null);
+            if (includeAll || fields.contains("account")) {
+                if (accountName != null || accountType != null) {
+                    JSObject account = new JSObject();
+                    account.put("name", accountName);
+                    account.put("type", accountType);
+                    contact.put("account", account);
+                } else {
+                    contact.put("account", null);
+                }
             }
 
             return contact;
