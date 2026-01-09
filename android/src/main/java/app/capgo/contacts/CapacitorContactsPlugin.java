@@ -1179,7 +1179,7 @@ public class CapacitorContactsPlugin extends Plugin {
                 },
                 selection.toString(),
                 selectionArgs.toArray(new String[0]),
-                null
+                ContactsContract.RawContacts._ID + " ASC"
             )
         ) {
             if (rawCursor != null) {
@@ -1394,7 +1394,9 @@ public class CapacitorContactsPlugin extends Plugin {
                 }
             }
         } catch (Exception e) {
-            // Return empty set if parsing fails
+            // Return empty set if parsing fails+            
+            // Log and return empty set if parsing fails
++           android.util.Log.w("CapacitorContacts", "Failed to parse fields array", e);
         }
         return fields.isEmpty() ? null : fields;
     }
