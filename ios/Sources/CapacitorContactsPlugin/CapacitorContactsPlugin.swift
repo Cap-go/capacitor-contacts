@@ -526,7 +526,7 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
         if shouldFetchAll || fields!.contains("urlAddresses") { keys.append(CNContactUrlAddressesKey as CNKeyDescriptor) }
         if shouldFetchAll || fields!.contains("birthday") { keys.append(CNContactBirthdayKey as CNKeyDescriptor) }
         if shouldFetchAll || fields!.contains("note") { keys.append(CNContactNoteKey as CNKeyDescriptor) }
-        
+
         if shouldFetchAll || fields!.contains("photo") {
             keys.append(CNContactImageDataAvailableKey as CNKeyDescriptor)
             keys.append(CNContactImageDataKey as CNKeyDescriptor)

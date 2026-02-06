@@ -1380,25 +1380,25 @@ public class CapacitorContactsPlugin extends Plugin {
         return null;
     }
 
-	    private Set<String> parseFieldsArray(PluginCall call) {
-	        JSArray fieldsArray = call.getArray("fields", null);
-	        if (fieldsArray == null) {
-	            return null;
-	        }
-	        Set<String> fields = new HashSet<>();
-	        try {
-	            List<Object> list = fieldsArray.toList();
-	            for (Object item : list) {
-	                if (item instanceof String) {
-	                    fields.add((String) item);
-	                }
-	            }
-	        } catch (Exception e) {
-	            // Log and return empty set if parsing fails
-	            android.util.Log.w("CapacitorContacts", "Failed to parse fields array", e);
-	        }
-	        return fields.isEmpty() ? null : fields;
-	    }
+    private Set<String> parseFieldsArray(PluginCall call) {
+        JSArray fieldsArray = call.getArray("fields", null);
+        if (fieldsArray == null) {
+            return null;
+        }
+        Set<String> fields = new HashSet<>();
+        try {
+            List<Object> list = fieldsArray.toList();
+            for (Object item : list) {
+                if (item instanceof String) {
+                    fields.add((String) item);
+                }
+            }
+        } catch (Exception e) {
+            // Log and return empty set if parsing fails
+            android.util.Log.w("CapacitorContacts", "Failed to parse fields array", e);
+        }
+        return fields.isEmpty() ? null : fields;
+    }
 
     private List<String> getMimeTypesForFields(Set<String> fields) {
         List<String> mimeTypes = new ArrayList<>();
