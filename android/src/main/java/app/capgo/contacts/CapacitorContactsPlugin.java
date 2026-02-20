@@ -39,7 +39,7 @@ import java.util.Set;
 )
 public class CapacitorContactsPlugin extends Plugin {
 
-    private final String pluginVersion = "8.0.7";
+    private final String pluginVersion = "8.0.8";
     private static final int BATCH_SIZE = 50;
 
     // MARK: - Implemented API surface
