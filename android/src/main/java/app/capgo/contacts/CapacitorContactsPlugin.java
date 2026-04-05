@@ -186,9 +186,34 @@ public class CapacitorContactsPlugin extends Plugin {
 
     @PluginMethod
     public void requestPermissions(PluginCall call) {
-        // In Capacitor 7, the permission system works differently
-        // We just need to request the permissions defined in the plugin annotation
-        requestPermissionForAlias("readContacts", call, "handleRequestPermissions");
+        JSArray permissions = call.getArray("permissions");
+        String[] aliases;
+
+        if (permissions == null || permissions.length() == 0) {
+            aliases = new String[] { "readContacts", "writeContacts" };
+        } else {
+            List<String> requestedAliases = new ArrayList<>();
+
+            for (Object permission : permissions.toList()) {
+                if (!(permission instanceof String)) {
+                    continue;
+                }
+
+                String alias = (String) permission;
+                if ("readContacts".equals(alias) || "writeContacts".equals(alias)) {
+                    requestedAliases.add(alias);
+                }
+            }
+
+            if (requestedAliases.isEmpty()) {
+                call.reject("No valid permissions requested.");
+                return;
+            }
+
+            aliases = requestedAliases.toArray(new String[0]);
+        }
+
+        requestPermissionForAliases(aliases, call, "handleRequestPermissions");
     }
 
     @PermissionCallback
