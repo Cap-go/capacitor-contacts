@@ -194,12 +194,12 @@ public class CapacitorContactsPlugin extends Plugin {
         } else {
             List<String> requestedAliases = new ArrayList<>();
 
-            for (Object permission : permissions.toList()) {
-                if (!(permission instanceof String)) {
+            for (int i = 0; i < permissions.length(); i++) {
+                String alias = permissions.optString(i, null);
+                if (alias == null) {
                     continue;
                 }
 
-                String alias = (String) permission;
                 if ("readContacts".equals(alias) || "writeContacts".equals(alias)) {
                     requestedAliases.add(alias);
                 }
