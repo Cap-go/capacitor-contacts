@@ -493,8 +493,10 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
 
     private func mapAuthorizationStatus(_ status: CNAuthorizationStatus) -> String {
         switch status {
-        case .authorized, .limited:
+        case .authorized:
             return "granted"
+        case .limited:
+            return "limited"
         case .denied:
             return "denied"
         case .restricted:
