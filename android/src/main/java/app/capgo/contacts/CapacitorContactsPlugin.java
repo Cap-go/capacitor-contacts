@@ -35,7 +35,8 @@ import java.util.Set;
     permissions = {
         @Permission(alias = "readContacts", strings = { Manifest.permission.READ_CONTACTS }),
         @Permission(alias = "writeContacts", strings = { Manifest.permission.WRITE_CONTACTS })
-    }
+    },
+    requestCodes = { 7001, 7003 }
 )
 public class CapacitorContactsPlugin extends Plugin {
 
