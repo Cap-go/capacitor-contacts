@@ -1,3 +1,5 @@
+import { CapacitorUpdater } from '@capgo/capacitor-updater';
+import { Capacitor } from '@capacitor/core';
 import './style.css';
 import { CapacitorContacts } from '@capgo/capacitor-contacts';
 
@@ -64,3 +66,9 @@ listContactsButton.addEventListener('click', async () => {
 });
 
 refreshState().catch((error) => setOutcome(error?.message ?? String(error)));
+
+if (Capacitor.isNativePlatform()) {
+  CapacitorUpdater.notifyAppReady().catch((error) => {
+    console.error('Capgo notifyAppReady failed', error);
+  });
+}
