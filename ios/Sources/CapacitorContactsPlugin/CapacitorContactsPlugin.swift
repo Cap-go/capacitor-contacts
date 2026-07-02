@@ -374,21 +374,31 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func pickContact(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
+            // Re-entrancy guard: only one picker can be active at a time.
+            if self.currentPickerCall != nil {
+                call.reject("A contact picker is already open.")
+                return
+            }
+            // Validate bridge and viewController are available before proceeding.
+            guard let viewController = self.bridge?.viewController else {
+                call.reject("Unable to present contact picker: no view controller available.")
+                return
+            }
             self.currentPickerCall = call
             // Use a single-selection delegate so iOS does NOT show checkboxes.
             // CNContactPickerViewController enables multi-select UI only when the
             // delegate implements the plural didSelect(contacts:) method.
             let delegate = SingleContactPickerDelegate()
-            delegate.onSelect = { [weak self] contact in
-                guard let self, let call = self.currentPickerCall else { return }
+            delegate.onSelect = { [weak self, call] contact in
+                guard let self else { return }
                 self.currentPickerCall = nil
                 self.currentPickerDelegate = nil
                 let membership = self.groupMembershipMap(for: [contact.identifier])
                 let serialized = self.serialize(contact: contact, fields: nil, membership: membership)
                 call.resolve(["contacts": [serialized]])
             }
-            delegate.onCancel = { [weak self] in
-                guard let self, let call = self.currentPickerCall else { return }
+            delegate.onCancel = { [weak self, call] in
+                guard let self else { return }
                 self.currentPickerCall = nil
                 self.currentPickerDelegate = nil
                 call.resolve(["contacts": []])
@@ -396,17 +406,27 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
             self.currentPickerDelegate = delegate
             let picker = CNContactPickerViewController()
             picker.delegate = delegate
-            self.bridge?.viewController?.present(picker, animated: true)
+            viewController.present(picker, animated: true)
         }
     }
 
     @objc func pickContacts(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
+            // Re-entrancy guard: only one picker can be active at a time.
+            if self.currentPickerCall != nil {
+                call.reject("A contact picker is already open.")
+                return
+            }
+            // Validate bridge and viewController are available before proceeding.
+            guard let viewController = self.bridge?.viewController else {
+                call.reject("Unable to present contact picker: no view controller available.")
+                return
+            }
             self.currentPickerCall = call
             // Use a multi-selection delegate so iOS shows checkboxes as expected.
             let delegate = MultiContactPickerDelegate()
-            delegate.onSelect = { [weak self] contacts in
-                guard let self, let call = self.currentPickerCall else { return }
+            delegate.onSelect = { [weak self, call] contacts in
+                guard let self else { return }
                 self.currentPickerCall = nil
                 self.currentPickerDelegate = nil
                 let contactIds = contacts.map(\.identifier)
@@ -414,8 +434,8 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
                 let serialized = contacts.map { self.serialize(contact: $0, fields: nil, membership: membership) }
                 call.resolve(["contacts": serialized])
             }
-            delegate.onCancel = { [weak self] in
-                guard let self, let call = self.currentPickerCall else { return }
+            delegate.onCancel = { [weak self, call] in
+                guard let self else { return }
                 self.currentPickerCall = nil
                 self.currentPickerDelegate = nil
                 call.resolve(["contacts": []])
@@ -423,7 +443,7 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
             self.currentPickerDelegate = delegate
             let picker = CNContactPickerViewController()
             picker.delegate = delegate
-            self.bridge?.viewController?.present(picker, animated: true)
+            viewController.present(picker, animated: true)
         }
     }
 
@@ -453,19 +473,29 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func displayCreateContact(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
+            // Re-entrancy guard: only one picker can be active at a time.
+            if self.currentPickerCall != nil {
+                call.reject("A contact picker is already open.")
+                return
+            }
+            // Validate bridge and viewController are available before proceeding.
+            guard let viewController = self.bridge?.viewController else {
+                call.reject("Unable to present contact editor: no view controller available.")
+                return
+            }
             let newContact = CNMutableContact()
 
             if let contactData = call.options["contact"] as? JSObject {
                 self.populateContact(newContact, from: contactData)
             }
 
-            let viewController = CNContactViewController(forNewContact: newContact)
-            viewController.delegate = self
-            viewController.contactStore = self.contactStore
+            let contactViewController = CNContactViewController(forNewContact: newContact)
+            contactViewController.delegate = self
+            contactViewController.contactStore = self.contactStore
 
-            let navController = UINavigationController(rootViewController: viewController)
+            let navController = UINavigationController(rootViewController: contactViewController)
             self.currentPickerCall = call
-            self.bridge?.viewController?.present(navController, animated: true)
+            viewController.present(navController, animated: true)
         }
     }
 
@@ -1015,6 +1045,11 @@ private class SingleContactPickerDelegate: NSObject, CNContactPickerDelegate {
     func contactPickerDidCancel(_ picker: CNContactPickerViewController) {
         onCancel?()
     }
+
+    deinit {
+        onSelect = nil
+        onCancel = nil
+    }
 }
 
 // MARK: - Multi-selection picker delegate (checkboxes enabled in UI)
@@ -1031,6 +1066,11 @@ private class MultiContactPickerDelegate: NSObject, CNContactPickerDelegate {
 
     func contactPickerDidCancel(_ picker: CNContactPickerViewController) {
         onCancel?()
+    }
+
+    deinit {
+        onSelect = nil
+        onCancel = nil
     }
 }
 
