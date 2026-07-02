@@ -368,12 +368,34 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
     // MARK: - UI picker and display operations
 
     private var currentPickerCall: CAPPluginCall?
+    // Holds a strong reference to the picker delegate so it isn't deallocated
+    // before the picker dismisses (CNContactPickerViewController delegates are weak).
+    private var currentPickerDelegate: NSObject?
 
     @objc func pickContact(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
             self.currentPickerCall = call
+            // Use a single-selection delegate so iOS does NOT show checkboxes.
+            // CNContactPickerViewController enables multi-select UI only when the
+            // delegate implements the plural didSelect(contacts:) method.
+            let delegate = SingleContactPickerDelegate()
+            delegate.onSelect = { [weak self] contact in
+                guard let self, let call = self.currentPickerCall else { return }
+                self.currentPickerCall = nil
+                self.currentPickerDelegate = nil
+                let membership = self.groupMembershipMap(for: [contact.identifier])
+                let serialized = self.serialize(contact: contact, fields: nil, membership: membership)
+                call.resolve(["contacts": [serialized]])
+            }
+            delegate.onCancel = { [weak self] in
+                guard let self, let call = self.currentPickerCall else { return }
+                self.currentPickerCall = nil
+                self.currentPickerDelegate = nil
+                call.resolve(["contacts": []])
+            }
+            self.currentPickerDelegate = delegate
             let picker = CNContactPickerViewController()
-            picker.delegate = self
+            picker.delegate = delegate
             self.bridge?.viewController?.present(picker, animated: true)
         }
     }
@@ -381,8 +403,26 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func pickContacts(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
             self.currentPickerCall = call
+            // Use a multi-selection delegate so iOS shows checkboxes as expected.
+            let delegate = MultiContactPickerDelegate()
+            delegate.onSelect = { [weak self] contacts in
+                guard let self, let call = self.currentPickerCall else { return }
+                self.currentPickerCall = nil
+                self.currentPickerDelegate = nil
+                let contactIds = contacts.map(\.identifier)
+                let membership = self.groupMembershipMap(for: contactIds)
+                let serialized = contacts.map { self.serialize(contact: $0, fields: nil, membership: membership) }
+                call.resolve(["contacts": serialized])
+            }
+            delegate.onCancel = { [weak self] in
+                guard let self, let call = self.currentPickerCall else { return }
+                self.currentPickerCall = nil
+                self.currentPickerDelegate = nil
+                call.resolve(["contacts": []])
+            }
+            self.currentPickerDelegate = delegate
             let picker = CNContactPickerViewController()
-            picker.delegate = self
+            picker.delegate = delegate
             self.bridge?.viewController?.present(picker, animated: true)
         }
     }
@@ -960,35 +1000,37 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 }
 
-// MARK: - CNContactPickerDelegate
+// MARK: - Single-selection picker delegate (no checkboxes in UI)
+// Only implementing the singular `didSelect contact:` tells iOS NOT to
+// enable multi-selection mode on CNContactPickerViewController.
 
-extension CapacitorContactsPlugin: CNContactPickerDelegate {
-    public func contactPicker(_ picker: CNContactPickerViewController, didSelect contacts: [CNContact]) {
-        guard let call = currentPickerCall else { return }
-        currentPickerCall = nil
+private class SingleContactPickerDelegate: NSObject, CNContactPickerDelegate {
+    var onSelect: ((CNContact) -> Void)?
+    var onCancel: (() -> Void)?
 
-        let includeGroupIds = true
-        var membership: [String: [String]] = [:]
-        let contactIds = contacts.map(\.identifier)
-        membership = groupMembershipMap(for: contactIds)
-
-        let serialized = contacts.map { serialize(contact: $0, fields: nil, membership: membership) }
-        call.resolve(["contacts": serialized])
+    func contactPicker(_ picker: CNContactPickerViewController, didSelect contact: CNContact) {
+        onSelect?(contact)
     }
 
-    public func contactPicker(_ picker: CNContactPickerViewController, didSelect contact: CNContact) {
-        guard let call = currentPickerCall else { return }
-        currentPickerCall = nil
+    func contactPickerDidCancel(_ picker: CNContactPickerViewController) {
+        onCancel?()
+    }
+}
 
-        let membership = groupMembershipMap(for: [contact.identifier])
-        let serialized = serialize(contact: contact, fields: nil, membership: membership)
-        call.resolve(["contacts": [serialized]])
+// MARK: - Multi-selection picker delegate (checkboxes enabled in UI)
+// Implementing the plural `didSelect contacts:` is what tells iOS to
+// enable multi-selection mode (checkboxes) on CNContactPickerViewController.
+
+private class MultiContactPickerDelegate: NSObject, CNContactPickerDelegate {
+    var onSelect: (([CNContact]) -> Void)?
+    var onCancel: (() -> Void)?
+
+    func contactPicker(_ picker: CNContactPickerViewController, didSelect contacts: [CNContact]) {
+        onSelect?(contacts)
     }
 
-    public func contactPickerDidCancel(_ picker: CNContactPickerViewController) {
-        guard let call = currentPickerCall else { return }
-        currentPickerCall = nil
-        call.resolve(["contacts": []])
+    func contactPickerDidCancel(_ picker: CNContactPickerViewController) {
+        onCancel?()
     }
 }
 
