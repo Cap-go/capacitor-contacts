@@ -45,6 +45,48 @@ npm install @capgo/capacitor-contacts
 npx cap sync
 ```
 
+## Android
+
+Google Play's Contacts Permissions policy (effective 27 January 2027) allows `READ_CONTACTS` only when the Android Contact Picker cannot cover your core feature, for apps that target Android 17 (API 37) or later.
+
+This plugin does **not** declare `READ_CONTACTS` or `WRITE_CONTACTS`. Add them in your app manifest only if you need them.
+
+**Pick a phone, email, or address without `READ_CONTACTS`:**
+
+```typescript
+import { CapacitorContacts, ContactProperty } from '@capgo/capacitor-contacts';
+
+const { contacts } = await CapacitorContacts.pickContacts({
+  property: ContactProperty.PhoneNumber,
+});
+
+const number = contacts[0]?.phoneNumbers?.[0]?.value;
+```
+
+`property` works on every Android version. The picker returns a data-row URI the plugin can read without a permission. The result contains `id`, `displayName`, and the selected property only.
+
+Use `ContactProperty.EmailAddress` or `ContactProperty.PostalAddress` the same way.
+
+**When you still need `READ_CONTACTS`:**
+
+- `getContacts()`, `getContactById()`, `countContacts()`, `getGroups()`, `getAccounts()`
+- Picking a full contact without `property` on Android 16 and below
+- Syncing, backing up, or matching the whole address book
+
+If those are core features, add the permission and file the Play Console declaration before pre-review checks start on 27 October 2026:
+
+```xml
+<uses-permission android:name="android.permission.READ_CONTACTS" />
+```
+
+`WRITE_CONTACTS` is unchanged by this policy. Add it only if you create or update contacts in code.
+
+On Android 17 and later, picking a full contact without `property` also works without `READ_CONTACTS` because the system picker returns a session URI. Keep using `property` if you still support older Android versions and want the permission out of the manifest entirely.
+
+## iOS
+
+`pickContact()` / `pickContacts()` never require a contacts permission. Add `NSContactsUsageDescription` only if you call methods that read or write the address book (`getContacts`, `createContact`, and similar).
+
 ## API
 
 <docgen-index>
@@ -73,6 +115,7 @@ npx cap sync
 * [`getPluginVersion()`](#getpluginversion)
 * [Interfaces](#interfaces)
 * [Type Aliases](#type-aliases)
+* [Enums](#enums)
 
 </docgen-index>
 
@@ -359,6 +402,9 @@ pickContact(options?: PickContactsOptions | undefined) => Promise<PickContactRes
 
 <a href="#pick">Pick</a> a single contact using the native contact picker.
 
+Same options as {@link pickContacts}. Pass `property` to select one phone
+number, email address, or postal address without `READ_CONTACTS` on Android.
+
 | Param         | Type                                                                | Description                                            |
 | ------------- | ------------------------------------------------------------------- | ------------------------------------------------------ |
 | **`options`** | <code><a href="#pickcontactsoptions">PickContactsOptions</a></code> | - Optional fields to retrieve and picker configuration |
@@ -377,6 +423,18 @@ pickContacts(options?: PickContactsOptions | undefined) => Promise<PickContactsR
 ```
 
 <a href="#pick">Pick</a> one or more contacts using the native contact picker.
+
+On iOS this never requires a contacts permission.
+
+On Android, pass `property` to select a single phone number, email address,
+or postal address with no `READ_CONTACTS` permission. That works on every
+Android version and is the way to ship without declaring the permission
+when targeting Android 17 (API 37) or later.
+
+Picking a full contact without `property` still needs `READ_CONTACTS` below
+Android 17, because the picker URI exposes no phone, email, or structured
+name. On Android 17 and later the system contact picker returns a session
+URI the plugin reads without that permission.
 
 | Param         | Type                                                                | Description                                            |
 | ------------- | ------------------------------------------------------------------- | ------------------------------------------------------ |
@@ -489,26 +547,27 @@ Options for creating a contact.
 
 <a href="#contact">Contact</a> information.
 
-| Prop                   | Type                                          | Description                                                   | Since |
-| ---------------------- | --------------------------------------------- | ------------------------------------------------------------- | ----- |
-| **`id`**               | <code>string</code>                           | Unique identifier for the contact.                            | 1.0.0 |
-| **`account`**          | <code><a href="#account">Account</a></code>   | <a href="#account">Account</a> information for the contact.   | 1.0.0 |
-| **`birthday`**         | <code><a href="#birthday">Birthday</a></code> | <a href="#birthday">Birthday</a> information for the contact. | 1.0.0 |
-| **`emailAddresses`**   | <code>EmailAddress[]</code>                   | Email addresses for the contact.                              | 1.0.0 |
-| **`familyName`**       | <code>string</code>                           | Family name (last name) of the contact.                       | 1.0.0 |
-| **`fullName`**         | <code>string</code>                           | Full name of the contact.                                     | 1.0.0 |
-| **`givenName`**        | <code>string</code>                           | Given name (first name) of the contact.                       | 1.0.0 |
-| **`groupIds`**         | <code>string[]</code>                         | <a href="#group">Group</a> IDs the contact belongs to.        | 1.0.0 |
-| **`jobTitle`**         | <code>string</code>                           | Job title of the contact.                                     | 1.0.0 |
-| **`middleName`**       | <code>string</code>                           | Middle name of the contact.                                   | 1.0.0 |
-| **`namePrefix`**       | <code>string</code>                           | Name prefix (e.g., "Dr.", "Mr.", "Ms.") of the contact.       | 1.0.0 |
-| **`nameSuffix`**       | <code>string</code>                           | Name suffix (e.g., "Jr.", "Sr.", "III") of the contact.       | 1.0.0 |
-| **`note`**             | <code>string</code>                           | Notes about the contact.                                      | 1.0.0 |
-| **`organizationName`** | <code>string</code>                           | Organization name of the contact.                             | 1.0.0 |
-| **`phoneNumbers`**     | <code>PhoneNumber[]</code>                    | Phone numbers for the contact.                                | 1.0.0 |
-| **`photo`**            | <code>string</code>                           | Base64-encoded photo of the contact.                          | 1.0.0 |
-| **`postalAddresses`**  | <code>PostalAddress[]</code>                  | Postal addresses for the contact.                             | 1.0.0 |
-| **`urlAddresses`**     | <code>UrlAddress[]</code>                     | URL addresses for the contact.                                | 1.0.0 |
+| Prop                   | Type                                          | Description                                                                                                                                                                                                                                               | Since |
+| ---------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| **`id`**               | <code>string</code>                           | Unique identifier for the contact.                                                                                                                                                                                                                        | 1.0.0 |
+| **`displayName`**      | <code>string</code>                           | Formatted name shown by the device for this contact. Derived from `CNContactFormatter` on iOS and `DISPLAY_NAME` on Android. Read-only: setting this when creating or updating a contact has no effect. Use `givenName` and `familyName` to write a name. | 8.1.0 |
+| **`account`**          | <code><a href="#account">Account</a></code>   | <a href="#account">Account</a> information for the contact.                                                                                                                                                                                               | 1.0.0 |
+| **`birthday`**         | <code><a href="#birthday">Birthday</a></code> | <a href="#birthday">Birthday</a> information for the contact.                                                                                                                                                                                             | 1.0.0 |
+| **`emailAddresses`**   | <code>EmailAddress[]</code>                   | Email addresses for the contact.                                                                                                                                                                                                                          | 1.0.0 |
+| **`familyName`**       | <code>string</code>                           | Family name (last name) of the contact.                                                                                                                                                                                                                   | 1.0.0 |
+| **`fullName`**         | <code>string</code>                           | Full name of the contact.                                                                                                                                                                                                                                 | 1.0.0 |
+| **`givenName`**        | <code>string</code>                           | Given name (first name) of the contact.                                                                                                                                                                                                                   | 1.0.0 |
+| **`groupIds`**         | <code>string[]</code>                         | <a href="#group">Group</a> IDs the contact belongs to.                                                                                                                                                                                                    | 1.0.0 |
+| **`jobTitle`**         | <code>string</code>                           | Job title of the contact.                                                                                                                                                                                                                                 | 1.0.0 |
+| **`middleName`**       | <code>string</code>                           | Middle name of the contact.                                                                                                                                                                                                                               | 1.0.0 |
+| **`namePrefix`**       | <code>string</code>                           | Name prefix (e.g., "Dr.", "Mr.", "Ms.") of the contact.                                                                                                                                                                                                   | 1.0.0 |
+| **`nameSuffix`**       | <code>string</code>                           | Name suffix (e.g., "Jr.", "Sr.", "III") of the contact.                                                                                                                                                                                                   | 1.0.0 |
+| **`note`**             | <code>string</code>                           | Notes about the contact.                                                                                                                                                                                                                                  | 1.0.0 |
+| **`organizationName`** | <code>string</code>                           | Organization name of the contact.                                                                                                                                                                                                                         | 1.0.0 |
+| **`phoneNumbers`**     | <code>PhoneNumber[]</code>                    | Phone numbers for the contact.                                                                                                                                                                                                                            | 1.0.0 |
+| **`photo`**            | <code>string</code>                           | Base64-encoded photo of the contact.                                                                                                                                                                                                                      | 1.0.0 |
+| **`postalAddresses`**  | <code>PostalAddress[]</code>                  | Postal addresses for the contact.                                                                                                                                                                                                                         | 1.0.0 |
+| **`urlAddresses`**     | <code>UrlAddress[]</code>                     | URL addresses for the contact.                                                                                                                                                                                                                            | 1.0.0 |
 
 
 #### Account
@@ -774,10 +833,11 @@ Result from picking contacts.
 
 Options for picking contacts using the native contact picker.
 
-| Prop           | Type                                                  | Description                                                                              | Since |
-| -------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------- | ----- |
-| **`fields`**   | <code>(keyof <a href="#contact">Contact</a>)[]</code> | Optional list of specific fields to retrieve. If not specified, all fields are returned. | 1.0.0 |
-| **`multiple`** | <code>boolean</code>                                  | Whether to allow selecting multiple contacts. Default is false.                          | 1.0.0 |
+| Prop           | Type                                                        | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Since |
+| -------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| **`fields`**   | <code>(keyof <a href="#contact">Contact</a>)[]</code>       | Optional list of specific fields to retrieve. If not specified, all fields are returned. Ignored when {@link <a href="#pickcontactsoptions">PickContactsOptions.property</a>} is set. The result then contains only `id`, `displayName`, and the selected property.                                                                                                                                                                                                                                                                   | 1.0.0 |
+| **`multiple`** | <code>boolean</code>                                        | Whether to allow selecting multiple contacts. Default is false. Ignored when {@link <a href="#pickcontactsoptions">PickContactsOptions.property</a>} is set. Property picking always returns a single value.                                                                                                                                                                                                                                                                                                                          | 1.0.0 |
+| **`property`** | <code><a href="#contactproperty">ContactProperty</a></code> | Restrict the picker to a single contact property. On Android this launches the picker against the phone, email, or postal address table and reads the granted data row. That requires no `READ_CONTACTS` permission on any Android version, which is required for apps that only pick a contact detail and target Android 17 (API 37) or later under the Google Play Contacts Permissions policy. On iOS the picker lets the user choose one phone number, email address, or postal address. It never requires a contacts permission. | 8.1.0 |
 
 
 #### UpdateContactByIdOptions
@@ -899,6 +959,18 @@ Permission state for contacts access, including the 'limited' state for iOS 18+.
 Type of contacts permission to request.
 
 <code>'readContacts' | 'writeContacts'</code>
+
+
+### Enums
+
+
+#### ContactProperty
+
+| Members             | Value                        | Description              | Since |
+| ------------------- | ---------------------------- | ------------------------ | ----- |
+| **`PhoneNumber`**   | <code>'phoneNumber'</code>   | A single phone number.   | 8.1.0 |
+| **`EmailAddress`**  | <code>'emailAddress'</code>  | A single email address.  | 8.1.0 |
+| **`PostalAddress`** | <code>'postalAddress'</code> | A single postal address. | 8.1.0 |
 
 </docgen-api>
 

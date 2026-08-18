@@ -467,19 +467,87 @@ public class CapacitorContactsPlugin extends Plugin {
     private static final int EDIT_CONTACT_REQUEST = 7004;
 
     private PluginCall currentPickerCall;
+    private String currentPickerProperty;
+
+    // Android 17 (API 37) system contact picker. Constants are inlined so the
+    // plugin still compiles against compileSdk 36.
+    private static final int ANDROID_API_17 = 37;
+    private static final String ACTION_PICK_CONTACTS = "android.provider.action.PICK_CONTACTS";
+    private static final String EXTRA_PICK_CONTACTS_REQUESTED_DATA_FIELDS = "android.provider.extra.PICK_CONTACTS_REQUESTED_DATA_FIELDS";
+    private static final String EXTRA_PICK_CONTACTS_SELECTION_LIMIT = "android.provider.extra.PICK_CONTACTS_SELECTION_LIMIT";
 
     @PluginMethod
     public void pickContact(PluginCall call) {
-        currentPickerCall = call;
-        Intent intent = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
-        startActivityForResult(call, intent, PICK_CONTACT_REQUEST);
+        launchContactPicker(call);
     }
 
     @PluginMethod
     public void pickContacts(PluginCall call) {
-        // Android doesn't have a native multi-select contact picker
-        // Fall back to single selection
-        pickContact(call);
+        launchContactPicker(call);
+    }
+
+    private void launchContactPicker(PluginCall call) {
+        String property = call.getString("property");
+        if (property != null && contentUriForProperty(property) == null) {
+            call.reject("Invalid property. Use phoneNumber, emailAddress, or postalAddress.");
+            return;
+        }
+
+        currentPickerCall = call;
+        currentPickerProperty = property;
+        startActivityForResult(call, createPickIntent(call, property), PICK_CONTACT_REQUEST);
+    }
+
+    private Intent createPickIntent(PluginCall call, String property) {
+        if (property != null) {
+            return new Intent(Intent.ACTION_PICK, contentUriForProperty(property));
+        }
+
+        if (android.os.Build.VERSION.SDK_INT >= ANDROID_API_17) {
+            Intent intent = new Intent(ACTION_PICK_CONTACTS);
+            intent.putStringArrayListExtra(EXTRA_PICK_CONTACTS_REQUESTED_DATA_FIELDS, requestedMimeTypes(call));
+            boolean multiple = Boolean.TRUE.equals(call.getBoolean("multiple", false));
+            if (!multiple) {
+                intent.putExtra(EXTRA_PICK_CONTACTS_SELECTION_LIMIT, 1);
+            } else {
+                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+            }
+            if (intent.resolveActivity(getContext().getPackageManager()) != null) {
+                return intent;
+            }
+        }
+
+        return new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
+    }
+
+    private Uri contentUriForProperty(String property) {
+        if ("phoneNumber".equals(property)) {
+            return ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
+        }
+        if ("emailAddress".equals(property)) {
+            return ContactsContract.CommonDataKinds.Email.CONTENT_URI;
+        }
+        if ("postalAddress".equals(property)) {
+            return ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_URI;
+        }
+        return null;
+    }
+
+    private ArrayList<String> requestedMimeTypes(PluginCall call) {
+        Set<String> fields = parseFieldsArray(call);
+        if (fields != null) {
+            return new ArrayList<>(getMimeTypesForFields(fields));
+        }
+        ArrayList<String> mimeTypes = new ArrayList<>();
+        mimeTypes.add(ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE);
+        mimeTypes.add(ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
+        mimeTypes.add(ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE);
+        mimeTypes.add(ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE);
+        mimeTypes.add(ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE);
+        mimeTypes.add(ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE);
+        mimeTypes.add(ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE);
+        mimeTypes.add(ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE);
+        return mimeTypes;
     }
 
     @PluginMethod
@@ -546,6 +614,7 @@ public class CapacitorContactsPlugin extends Plugin {
         currentPickerCall = null;
 
         if (resultCode != android.app.Activity.RESULT_OK) {
+            currentPickerProperty = null;
             if (requestCode == PICK_CONTACT_REQUEST) {
                 call.resolve(new JSObject().put("contacts", new JSArray()));
             } else if (requestCode == CREATE_CONTACT_REQUEST) {
@@ -557,20 +626,9 @@ public class CapacitorContactsPlugin extends Plugin {
         try {
             if (requestCode == PICK_CONTACT_REQUEST) {
                 if (data != null && data.getData() != null) {
-                    String contactId = getContactIdFromUri(data.getData());
-                    if (contactId != null) {
-                        ContactBuilder builder = fetchContact(contactId, null);
-                        if (builder != null) {
-                            JSArray contacts = new JSArray();
-                            contacts.put(builder.toJSObject(null));
-                            call.resolve(new JSObject().put("contacts", contacts));
-                        } else {
-                            call.resolve(new JSObject().put("contacts", new JSArray()));
-                        }
-                    } else {
-                        call.resolve(new JSObject().put("contacts", new JSArray()));
-                    }
+                    resolvePickedUri(call, data.getData());
                 } else {
+                    currentPickerProperty = null;
                     call.resolve(new JSObject().put("contacts", new JSArray()));
                 }
             } else if (requestCode == CREATE_CONTACT_REQUEST) {
@@ -588,6 +646,168 @@ public class CapacitorContactsPlugin extends Plugin {
         } catch (Exception ex) {
             call.reject("Failed to process contact picker result.", null, ex);
         }
+    }
+
+    private void resolvePickedUri(PluginCall call, Uri uri) {
+        String property = currentPickerProperty;
+        currentPickerProperty = null;
+
+        if (isSessionUri(uri)) {
+            call.resolve(new JSObject().put("contacts", contactsFromSessionUri(uri, fieldsForPickedContact(call))));
+            return;
+        }
+
+        if (property != null || isDataRowUri(uri)) {
+            JSObject contact = contactFromDataRowUri(uri, property);
+            JSArray contacts = new JSArray();
+            if (contact != null) {
+                contacts.put(contact);
+            }
+            call.resolve(new JSObject().put("contacts", contacts));
+            return;
+        }
+
+        call.resolve(new JSObject().put("contacts", contactsFromContactUri(uri, fieldsForPickedContact(call))));
+    }
+
+    private Set<String> fieldsForPickedContact(PluginCall call) {
+        Set<String> fields = parseFieldsArray(call);
+        if (fields == null) {
+            return null;
+        }
+        Set<String> withIdentity = new HashSet<>(fields);
+        withIdentity.add("id");
+        withIdentity.add("displayName");
+        return withIdentity;
+    }
+
+    private boolean isSessionUri(Uri uri) {
+        String authority = uri.getAuthority();
+        return authority != null && authority.contains("picker");
+    }
+
+    private boolean isDataRowUri(Uri uri) {
+        List<String> segments = uri.getPathSegments();
+        return segments != null && !segments.isEmpty() && "data".equals(segments.get(0));
+    }
+
+    private JSArray contactsFromSessionUri(Uri sessionUri, Set<String> fields) {
+        JSArray contacts = new JSArray();
+        Map<String, ContactBuilder> builders = new java.util.LinkedHashMap<>();
+        ContentResolver resolver = getContext().getContentResolver();
+
+        try (Cursor cursor = resolver.query(sessionUri, null, null, null, null)) {
+            if (cursor == null) {
+                return contacts;
+            }
+            while (cursor.moveToNext()) {
+                String contactId = getStringColumn(cursor, ContactsContract.Data.CONTACT_ID);
+                if (contactId == null) {
+                    continue;
+                }
+                ContactBuilder builder = builders.get(contactId);
+                if (builder == null) {
+                    builder = new ContactBuilder(contactId);
+                    String displayName = getStringColumn(cursor, ContactsContract.Data.DISPLAY_NAME);
+                    builder.displayName = displayName;
+                    builder.fullName = displayName;
+                    builders.put(contactId, builder);
+                }
+                processDataRow(builder, cursor);
+            }
+        }
+
+        for (ContactBuilder builder : builders.values()) {
+            contacts.put(builder.toJSObject(fields));
+        }
+        return contacts;
+    }
+
+    private JSObject contactFromDataRowUri(Uri uri, String property) {
+        ContentResolver resolver = getContext().getContentResolver();
+        try (Cursor cursor = resolver.query(uri, null, null, null, null)) {
+            if (cursor == null || !cursor.moveToFirst()) {
+                return null;
+            }
+
+            String contactId = getStringColumn(cursor, ContactsContract.Data.CONTACT_ID);
+            ContactBuilder builder = new ContactBuilder(contactId != null ? contactId : uri.getLastPathSegment());
+            String displayName = getStringColumn(cursor, ContactsContract.Data.DISPLAY_NAME);
+            builder.displayName = displayName;
+            builder.fullName = displayName;
+            processDataRow(builder, cursor);
+
+            Set<String> fields = new HashSet<>();
+            fields.add("id");
+            fields.add("displayName");
+            if ("emailAddress".equals(property)) {
+                fields.add("emailAddresses");
+            } else if ("postalAddress".equals(property)) {
+                fields.add("postalAddresses");
+            } else {
+                fields.add("phoneNumbers");
+            }
+            return builder.toJSObject(fields);
+        } catch (Exception ex) {
+            android.util.Log.w("CapacitorContacts", "Failed to read picked contact data row", ex);
+            return null;
+        }
+    }
+
+    private JSArray contactsFromContactUri(Uri contactUri, Set<String> fields) {
+        JSArray contacts = new JSArray();
+        String contactId = getContactIdFromUri(contactUri);
+        if (contactId == null) {
+            return contacts;
+        }
+
+        if (hasReadPermission()) {
+            try {
+                ContactBuilder builder = fetchContact(contactId, fields);
+                if (builder != null) {
+                    if (builder.displayName == null) {
+                        builder.displayName = builder.fullName;
+                    }
+                    contacts.put(builder.toJSObject(fields));
+                }
+                return contacts;
+            } catch (Exception ex) {
+                android.util.Log.w("CapacitorContacts", "Failed to fetch picked contact", ex);
+            }
+        }
+
+        ContactBuilder builder = new ContactBuilder(contactId);
+        String displayName = resolveDisplayNameFromUri(contactUri);
+        builder.displayName = displayName;
+        builder.fullName = displayName;
+        Set<String> thinFields = new HashSet<>();
+        thinFields.add("id");
+        thinFields.add("displayName");
+        thinFields.add("fullName");
+        contacts.put(builder.toJSObject(thinFields));
+        return contacts;
+    }
+
+    private String resolveDisplayNameFromUri(Uri contactUri) {
+        ContentResolver resolver = getContext().getContentResolver();
+        try (
+            Cursor cursor = resolver.query(contactUri, new String[] { ContactsContract.Contacts.DISPLAY_NAME_PRIMARY }, null, null, null)
+        ) {
+            if (cursor != null && cursor.moveToFirst()) {
+                return cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY));
+            }
+        } catch (Exception ex) {
+            // The picker URI grant may only expose a subset of columns.
+        }
+        return null;
+    }
+
+    private static String getStringColumn(Cursor cursor, String column) {
+        int index = cursor.getColumnIndex(column);
+        if (index < 0) {
+            return null;
+        }
+        return cursor.getString(index);
     }
 
     private String getContactIdFromUri(Uri contactUri) {
@@ -1110,6 +1330,7 @@ public class CapacitorContactsPlugin extends Plugin {
                 String id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID));
                 String displayName = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY));
                 ContactBuilder builder = new ContactBuilder(id);
+                builder.displayName = displayName;
                 builder.fullName = displayName;
                 builderMap.put(id, builder);
             }
@@ -1291,6 +1512,9 @@ public class CapacitorContactsPlugin extends Plugin {
 
         if (builder.fullName == null) {
             builder.fullName = resolveDisplayName(contactId);
+        }
+        if (builder.displayName == null) {
+            builder.displayName = builder.fullName;
         }
 
         return builder;
@@ -1480,6 +1704,7 @@ public class CapacitorContactsPlugin extends Plugin {
         String jobTitle;
         String note;
         String fullName;
+        String displayName;
         String photoBase64;
         String accountName;
         String accountType;
@@ -1612,6 +1837,7 @@ public class CapacitorContactsPlugin extends Plugin {
             if (includeAll || fields.contains("jobTitle")) contact.put("jobTitle", jobTitle);
             if (includeAll || fields.contains("note")) contact.put("note", note);
             if (includeAll || fields.contains("fullName")) contact.put("fullName", fullName);
+            if (includeAll || fields.contains("displayName")) contact.put("displayName", displayName != null ? displayName : fullName);
             if (includeAll || fields.contains("photo")) contact.put("photo", photoBase64);
             if (includeAll || fields.contains("groupIds")) contact.put("groupIds", groupIds);
             if (includeAll || fields.contains("emailAddresses")) contact.put("emailAddresses", emailAddresses);

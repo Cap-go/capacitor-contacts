@@ -344,6 +344,17 @@ export interface Contact {
   id?: string;
 
   /**
+   * Formatted name shown by the device for this contact.
+   *
+   * Derived from `CNContactFormatter` on iOS and `DISPLAY_NAME` on Android.
+   * Read-only: setting this when creating or updating a contact has no effect.
+   * Use `givenName` and `familyName` to write a name.
+   *
+   * @since 8.1.0
+   */
+  displayName?: string;
+
+  /**
    * Account information for the contact.
    *
    * @since 1.0.0
@@ -779,6 +790,37 @@ export interface DeleteGroupByIdOptions {
 }
 
 /**
+ * Contact property that the native picker can select without `READ_CONTACTS`.
+ *
+ * Use with {@link PickContactsOptions.property} so the user picks one phone
+ * number, email address, or postal address instead of a full contact record.
+ *
+ * @since 8.1.0
+ */
+export enum ContactProperty {
+  /**
+   * A single phone number.
+   *
+   * @since 8.1.0
+   */
+  PhoneNumber = 'phoneNumber',
+
+  /**
+   * A single email address.
+   *
+   * @since 8.1.0
+   */
+  EmailAddress = 'emailAddress',
+
+  /**
+   * A single postal address.
+   *
+   * @since 8.1.0
+   */
+  PostalAddress = 'postalAddress',
+}
+
+/**
  * Options for picking contacts using the native contact picker.
  *
  * @since 1.0.0
@@ -787,6 +829,9 @@ export interface PickContactsOptions {
   /**
    * Optional list of specific fields to retrieve. If not specified, all fields are returned.
    *
+   * Ignored when {@link PickContactsOptions.property} is set. The result then
+   * contains only `id`, `displayName`, and the selected property.
+   *
    * @since 1.0.0
    */
   fields?: ContactField[];
@@ -794,9 +839,28 @@ export interface PickContactsOptions {
   /**
    * Whether to allow selecting multiple contacts. Default is false.
    *
+   * Ignored when {@link PickContactsOptions.property} is set. Property picking
+   * always returns a single value.
+   *
    * @since 1.0.0
    */
   multiple?: boolean;
+
+  /**
+   * Restrict the picker to a single contact property.
+   *
+   * On Android this launches the picker against the phone, email, or postal
+   * address table and reads the granted data row. That requires no
+   * `READ_CONTACTS` permission on any Android version, which is required for
+   * apps that only pick a contact detail and target Android 17 (API 37) or
+   * later under the Google Play Contacts Permissions policy.
+   *
+   * On iOS the picker lets the user choose one phone number, email address,
+   * or postal address. It never requires a contacts permission.
+   *
+   * @since 8.1.0
+   */
+  property?: ContactProperty;
 }
 
 /**
@@ -1023,6 +1087,9 @@ export interface CapacitorContactsPlugin {
   /**
    * Pick a single contact using the native contact picker.
    *
+   * Same options as {@link pickContacts}. Pass `property` to select one phone
+   * number, email address, or postal address without `READ_CONTACTS` on Android.
+   *
    * @param options - Optional fields to retrieve and picker configuration
    * @returns Promise that resolves with the selected contact(s)
    * @since 1.0.0
@@ -1031,6 +1098,18 @@ export interface CapacitorContactsPlugin {
 
   /**
    * Pick one or more contacts using the native contact picker.
+   *
+   * On iOS this never requires a contacts permission.
+   *
+   * On Android, pass `property` to select a single phone number, email address,
+   * or postal address with no `READ_CONTACTS` permission. That works on every
+   * Android version and is the way to ship without declaring the permission
+   * when targeting Android 17 (API 37) or later.
+   *
+   * Picking a full contact without `property` still needs `READ_CONTACTS` below
+   * Android 17, because the picker URI exposes no phone, email, or structured
+   * name. On Android 17 and later the system contact picker returns a session
+   * URI the plugin reads without that permission.
    *
    * @param options - Optional fields to retrieve and picker configuration
    * @returns Promise that resolves with the selected contacts

@@ -373,78 +373,191 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
     private var currentPickerDelegate: NSObject?
 
     @objc func pickContact(_ call: CAPPluginCall) {
+        presentContactPicker(call, multiple: false)
+    }
+
+    @objc func pickContacts(_ call: CAPPluginCall) {
+        let multiple = (call.options["multiple"] as? Bool) ?? true
+        presentContactPicker(call, multiple: multiple)
+    }
+
+    private func presentContactPicker(_ call: CAPPluginCall, multiple: Bool) {
         DispatchQueue.main.async {
-            // Re-entrancy guard: only one picker can be active at a time.
             if self.currentPickerCall != nil {
                 call.reject("A contact picker is already open.")
                 return
             }
-            // Validate bridge and viewController are available before proceeding.
             guard let viewController = self.bridge?.viewController else {
                 call.reject("Unable to present contact picker: no view controller available.")
                 return
             }
+
+            let property = call.options["property"] as? String
+            if let property, self.displayedPropertyKeys(for: property) == nil {
+                call.reject("Invalid property. Use phoneNumber, emailAddress, or postalAddress.")
+                return
+            }
+
             self.currentPickerCall = call
-            // Use a single-selection delegate so iOS does NOT show checkboxes.
-            // CNContactPickerViewController enables multi-select UI only when the
-            // delegate implements the plural didSelect(contacts:) method.
-            let delegate = SingleContactPickerDelegate()
-            delegate.onSelect = { [weak self, call] contact in
-                guard let self else { return }
-                self.currentPickerCall = nil
-                self.currentPickerDelegate = nil
-                let membership = self.groupMembershipMap(for: [contact.identifier])
-                let serialized = self.serialize(contact: contact, fields: nil, membership: membership)
-                call.resolve(["contacts": [serialized]])
-            }
-            delegate.onCancel = { [weak self, call] in
-                guard let self else { return }
-                self.currentPickerCall = nil
-                self.currentPickerDelegate = nil
-                call.resolve(["contacts": []])
-            }
-            self.currentPickerDelegate = delegate
-            let picker = CNContactPickerViewController()
-            picker.delegate = delegate
+            let picker = self.makeContactPicker(call: call, property: property, multiple: multiple)
             viewController.present(picker, animated: true)
         }
     }
 
-    @objc func pickContacts(_ call: CAPPluginCall) {
-        DispatchQueue.main.async {
-            // Re-entrancy guard: only one picker can be active at a time.
-            if self.currentPickerCall != nil {
-                call.reject("A contact picker is already open.")
-                return
-            }
-            // Validate bridge and viewController are available before proceeding.
-            guard let viewController = self.bridge?.viewController else {
-                call.reject("Unable to present contact picker: no view controller available.")
-                return
-            }
-            self.currentPickerCall = call
-            // Use a multi-selection delegate so iOS shows checkboxes as expected.
-            let delegate = MultiContactPickerDelegate()
-            delegate.onSelect = { [weak self, call] contacts in
-                guard let self else { return }
-                self.currentPickerCall = nil
-                self.currentPickerDelegate = nil
-                let contactIds = contacts.map(\.identifier)
-                let membership = self.groupMembershipMap(for: contactIds)
-                let serialized = contacts.map { self.serialize(contact: $0, fields: nil, membership: membership) }
-                call.resolve(["contacts": serialized])
-            }
-            delegate.onCancel = { [weak self, call] in
-                guard let self else { return }
-                self.currentPickerCall = nil
-                self.currentPickerDelegate = nil
-                call.resolve(["contacts": []])
-            }
-            self.currentPickerDelegate = delegate
-            let picker = CNContactPickerViewController()
-            picker.delegate = delegate
-            viewController.present(picker, animated: true)
+    private func makeContactPicker(call: CAPPluginCall, property: String?, multiple: Bool) -> CNContactPickerViewController {
+        let picker = CNContactPickerViewController()
+        if let property, let keys = displayedPropertyKeys(for: property) {
+            picker.displayedPropertyKeys = keys
+            picker.predicateForEnablingContact = predicateForProperty(property)
+            picker.predicateForSelectionOfProperty = predicateForSelectionOfProperty(property)
+            picker.delegate = propertyPickerDelegate(call)
+            return picker
         }
+        if multiple {
+            picker.delegate = multiPickerDelegate(call)
+            return picker
+        }
+        picker.delegate = singlePickerDelegate(call)
+        return picker
+    }
+
+    private func resolvePicker(_ call: CAPPluginCall, contacts: [JSObject]) {
+        currentPickerCall = nil
+        currentPickerDelegate = nil
+        call.resolve(["contacts": contacts])
+    }
+
+    private func propertyPickerDelegate(_ call: CAPPluginCall) -> PropertyContactPickerDelegate {
+        let delegate = PropertyContactPickerDelegate()
+        delegate.onSelect = { [weak self, call] contactProperty in
+            guard let self else { return }
+            self.resolvePicker(call, contacts: [self.serializePickedProperty(contactProperty)])
+        }
+        delegate.onCancel = { [weak self, call] in
+            self?.resolvePicker(call, contacts: [])
+        }
+        currentPickerDelegate = delegate
+        return delegate
+    }
+
+    private func multiPickerDelegate(_ call: CAPPluginCall) -> MultiContactPickerDelegate {
+        let delegate = MultiContactPickerDelegate()
+        delegate.onSelect = { [weak self, call] contacts in
+            guard let self else { return }
+            let membership = self.groupMembershipMap(for: contacts.map(\.identifier))
+            let serialized = contacts.map { self.serialize(contact: $0, fields: nil, membership: membership) }
+            self.resolvePicker(call, contacts: serialized)
+        }
+        delegate.onCancel = { [weak self, call] in
+            self?.resolvePicker(call, contacts: [])
+        }
+        currentPickerDelegate = delegate
+        return delegate
+    }
+
+    private func singlePickerDelegate(_ call: CAPPluginCall) -> SingleContactPickerDelegate {
+        let delegate = SingleContactPickerDelegate()
+        delegate.onSelect = { [weak self, call] contact in
+            guard let self else { return }
+            let membership = self.groupMembershipMap(for: [contact.identifier])
+            self.resolvePicker(call, contacts: [self.serialize(contact: contact, fields: nil, membership: membership)])
+        }
+        delegate.onCancel = { [weak self, call] in
+            self?.resolvePicker(call, contacts: [])
+        }
+        currentPickerDelegate = delegate
+        return delegate
+    }
+
+    private func displayedPropertyKeys(for property: String) -> [String]? {
+        let nameKeys = [CNContactGivenNameKey, CNContactFamilyNameKey, CNContactMiddleNameKey]
+        switch property {
+        case "phoneNumber":
+            return nameKeys + [CNContactPhoneNumbersKey]
+        case "emailAddress":
+            return nameKeys + [CNContactEmailAddressesKey]
+        case "postalAddress":
+            return nameKeys + [CNContactPostalAddressesKey]
+        default:
+            return nil
+        }
+    }
+
+    private func predicateForSelectionOfProperty(_ property: String) -> NSPredicate? {
+        switch property {
+        case "phoneNumber":
+            return NSPredicate(format: "key == %@", CNContactPhoneNumbersKey)
+        case "emailAddress":
+            return NSPredicate(format: "key == %@", CNContactEmailAddressesKey)
+        case "postalAddress":
+            return NSPredicate(format: "key == %@", CNContactPostalAddressesKey)
+        default:
+            return nil
+        }
+    }
+
+    private func predicateForProperty(_ property: String) -> NSPredicate? {
+        switch property {
+        case "phoneNumber":
+            return NSPredicate(format: "phoneNumbers.@count > 0")
+        case "emailAddress":
+            return NSPredicate(format: "emailAddresses.@count > 0")
+        case "postalAddress":
+            return NSPredicate(format: "postalAddresses.@count > 0")
+        default:
+            return nil
+        }
+    }
+
+    private func serializePickedProperty(_ contactProperty: CNContactProperty) -> JSObject {
+        let contact = contactProperty.contact
+        var result: JSObject = [:]
+        result["id"] = contact.identifier
+        result["displayName"] = CNContactFormatter.string(from: contact, style: .fullName) ?? ""
+
+        switch contactProperty.key {
+        case CNContactPhoneNumbersKey:
+            if let phone = contactProperty.value as? CNPhoneNumber {
+                let (type, label) = mapPhoneLabel(contactProperty.label)
+                var entry: JSObject = [:]
+                entry["value"] = phone.stringValue
+                entry["type"] = type
+                entry["isPrimary"] = false
+                if let label { entry["label"] = label }
+                result["phoneNumbers"] = [entry]
+            }
+        case CNContactEmailAddressesKey:
+            if let email = contactProperty.value as? String {
+                let (type, label) = mapEmailLabel(contactProperty.label)
+                var entry: JSObject = [:]
+                entry["value"] = email
+                entry["type"] = type
+                entry["isPrimary"] = false
+                if let label { entry["label"] = label }
+                result["emailAddresses"] = [entry]
+            }
+        case CNContactPostalAddressesKey:
+            if let postal = contactProperty.value as? CNPostalAddress {
+                let (type, label) = mapPostalLabel(contactProperty.label)
+                var entry: JSObject = [:]
+                entry["city"] = postal.city
+                entry["country"] = postal.country
+                entry["formatted"] = CNPostalAddressFormatter.string(from: postal, style: .mailingAddress)
+                entry["isoCountryCode"] = postal.isoCountryCode
+                entry["isPrimary"] = false
+                entry["neighborhood"] = postal.subLocality
+                entry["postalCode"] = postal.postalCode
+                entry["state"] = postal.state
+                entry["street"] = postal.street
+                entry["type"] = type
+                if let label { entry["label"] = label }
+                result["postalAddresses"] = [entry]
+            }
+        default:
+            break
+        }
+
+        return result
     }
 
     @objc func displayContactById(_ call: CAPPluginCall) {
@@ -608,7 +721,7 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
             // No additional keys required, but this preserves the behaviour if custom keys are needed later.
         }
 
-        if shouldFetchAll || fields!.contains("fullName") {
+        if shouldFetchAll || fields!.contains("fullName") || fields!.contains("displayName") {
             keys.append(CNContactFormatter.descriptorForRequiredKeys(for: .fullName))
         }
 
@@ -674,6 +787,9 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
         }
         if shouldInclude("fullName") {
             result["fullName"] = CNContactFormatter.string(from: contact, style: .fullName) ?? ""
+        }
+        if shouldInclude("displayName") {
+            result["displayName"] = CNContactFormatter.string(from: contact, style: .fullName) ?? ""
         }
 
         if shouldInclude("emailAddresses") {
@@ -1027,6 +1143,24 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
         default:
             return CNLabelOther
         }
+    }
+}
+
+private class PropertyContactPickerDelegate: NSObject, CNContactPickerDelegate {
+    var onSelect: ((CNContactProperty) -> Void)?
+    var onCancel: (() -> Void)?
+
+    func contactPicker(_ picker: CNContactPickerViewController, didSelect contactProperty: CNContactProperty) {
+        onSelect?(contactProperty)
+    }
+
+    func contactPickerDidCancel(_ picker: CNContactPickerViewController) {
+        onCancel?()
+    }
+
+    deinit {
+        onSelect = nil
+        onCancel = nil
     }
 }
 
