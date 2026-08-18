@@ -1087,8 +1087,8 @@ export interface CapacitorContactsPlugin {
   /**
    * Pick a single contact using the native contact picker.
    *
-   * Same options as {@link pickContacts}. Pass `property` to select one phone
-   * number, email address, or postal address without `READ_CONTACTS` on Android.
+   * Same options as {@link pickContacts}. Without `property`, Android still
+   * returns the full contact when `READ_CONTACTS` is granted.
    *
    * @param options - Optional fields to retrieve and picker configuration
    * @returns Promise that resolves with the selected contact(s)
@@ -1101,15 +1101,11 @@ export interface CapacitorContactsPlugin {
    *
    * On iOS this never requires a contacts permission.
    *
-   * On Android, pass `property` to select a single phone number, email address,
-   * or postal address with no `READ_CONTACTS` permission. That works on every
-   * Android version and is the way to ship without declaring the permission
-   * when targeting Android 17 (API 37) or later.
-   *
-   * Picking a full contact without `property` still needs `READ_CONTACTS` below
-   * Android 17, because the picker URI exposes no phone, email, or structured
-   * name. On Android 17 and later the system contact picker returns a session
-   * URI the plugin reads without that permission.
+   * On Android, `pickContacts()` without `property` still returns the full
+   * contact when the app has `READ_CONTACTS`. Pass `property` only when you
+   * want a single phone number, email address, or postal address and can omit
+   * that permission (required to target Android 17 / API 37 without a Play
+   * Console contacts declaration).
    *
    * @param options - Optional fields to retrieve and picker configuration
    * @returns Promise that resolves with the selected contacts
