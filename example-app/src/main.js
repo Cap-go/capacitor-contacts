@@ -1,7 +1,7 @@
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { Capacitor } from '@capacitor/core';
 import './style.css';
-import { CapacitorContacts } from '@capgo/capacitor-contacts';
+import { CapacitorContacts, ContactProperty } from '@capgo/capacitor-contacts';
 
 const permissionLabel = document.getElementById('permission');
 const supportedLabel = document.getElementById('supported');
@@ -10,6 +10,9 @@ const outcomeLabel = document.getElementById('outcome');
 const checkPermissionButton = document.getElementById('check-permission');
 const requestPermissionButton = document.getElementById('request-permission');
 const pickContactButton = document.getElementById('pick-contact');
+const pickPhoneButton = document.getElementById('pick-phone');
+const pickEmailButton = document.getElementById('pick-email');
+const pickAddressButton = document.getElementById('pick-address');
 const listContactsButton = document.getElementById('list-contacts');
 
 function setOutcome(message) {
@@ -55,6 +58,19 @@ pickContactButton.addEventListener('click', async () => {
     setOutcome(error?.message ?? String(error));
   }
 });
+
+async function pickProperty(property) {
+  try {
+    const result = await CapacitorContacts.pickContacts({ property });
+    setOutcome(JSON.stringify(result, null, 2));
+  } catch (error) {
+    setOutcome(error?.message ?? String(error));
+  }
+}
+
+pickPhoneButton.addEventListener('click', () => pickProperty(ContactProperty.PhoneNumber));
+pickEmailButton.addEventListener('click', () => pickProperty(ContactProperty.EmailAddress));
+pickAddressButton.addEventListener('click', () => pickProperty(ContactProperty.PostalAddress));
 
 listContactsButton.addEventListener('click', async () => {
   try {

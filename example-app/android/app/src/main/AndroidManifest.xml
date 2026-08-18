@@ -38,4 +38,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Required for getContacts / list APIs. Pick phone, email, or address does not need this. -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
 </manifest>
