@@ -653,7 +653,7 @@ public class CapacitorContactsPlugin extends Plugin {
         currentPickerProperty = null;
 
         if (isSessionUri(uri)) {
-            call.resolve(new JSObject().put("contacts", contactsFromSessionUri(uri, parseFieldsArray(call))));
+            call.resolve(new JSObject().put("contacts", contactsFromSessionUri(uri, fieldsForPickedContact(call))));
             return;
         }
 
@@ -667,7 +667,18 @@ public class CapacitorContactsPlugin extends Plugin {
             return;
         }
 
-        call.resolve(new JSObject().put("contacts", contactsFromContactUri(uri, parseFieldsArray(call))));
+        call.resolve(new JSObject().put("contacts", contactsFromContactUri(uri, fieldsForPickedContact(call))));
+    }
+
+    private Set<String> fieldsForPickedContact(PluginCall call) {
+        Set<String> fields = parseFieldsArray(call);
+        if (fields == null) {
+            return null;
+        }
+        Set<String> withIdentity = new HashSet<>(fields);
+        withIdentity.add("id");
+        withIdentity.add("displayName");
+        return withIdentity;
     }
 
     private boolean isSessionUri(Uri uri) {
