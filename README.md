@@ -69,11 +69,13 @@ Use `ContactProperty.EmailAddress` or `ContactProperty.PostalAddress` the same w
 
 **When you still need `READ_CONTACTS`:**
 
+- `pickContacts()` / `pickContact()` without `property` (full contact record)
 - `getContacts()`, `getContactById()`, `countContacts()`, `getGroups()`, `getAccounts()`
-- Picking a full contact without `property` on Android 16 and below
 - Syncing, backing up, or matching the whole address book
 
-If those are core features, add the permission and file the Play Console declaration before pre-review checks start on 27 October 2026:
+Those APIs keep working as before once `READ_CONTACTS` is in the app manifest and granted. Pass `property` only if you want to drop the permission.
+
+If full-address-book access is a core feature, add the permission and file the Play Console declaration before pre-review checks start on 27 October 2026:
 
 ```xml
 <uses-permission android:name="android.permission.READ_CONTACTS" />
@@ -81,7 +83,7 @@ If those are core features, add the permission and file the Play Console declara
 
 `WRITE_CONTACTS` is unchanged by this policy. Add it only if you create or update contacts in code.
 
-On Android 17 and later, picking a full contact without `property` also works without `READ_CONTACTS` because the system picker returns a session URI. Keep using `property` if you still support older Android versions and want the permission out of the manifest entirely.
+Without `READ_CONTACTS`, `pickContacts()` without `property` can still return `id` and `displayName` (and, on Android 17+, picker-granted fields). Use `property` to get a phone, email, or address with no permission on every Android version.
 
 ## iOS
 
@@ -402,8 +404,8 @@ pickContact(options?: PickContactsOptions | undefined) => Promise<PickContactRes
 
 <a href="#pick">Pick</a> a single contact using the native contact picker.
 
-Same options as {@link pickContacts}. Pass `property` to select one phone
-number, email address, or postal address without `READ_CONTACTS` on Android.
+Same options as {@link pickContacts}. Without `property`, Android still
+returns the full contact when `READ_CONTACTS` is granted.
 
 | Param         | Type                                                                | Description                                            |
 | ------------- | ------------------------------------------------------------------- | ------------------------------------------------------ |
@@ -426,15 +428,11 @@ pickContacts(options?: PickContactsOptions | undefined) => Promise<PickContactsR
 
 On iOS this never requires a contacts permission.
 
-On Android, pass `property` to select a single phone number, email address,
-or postal address with no `READ_CONTACTS` permission. That works on every
-Android version and is the way to ship without declaring the permission
-when targeting Android 17 (API 37) or later.
-
-Picking a full contact without `property` still needs `READ_CONTACTS` below
-Android 17, because the picker URI exposes no phone, email, or structured
-name. On Android 17 and later the system contact picker returns a session
-URI the plugin reads without that permission.
+On Android, `pickContacts()` without `property` still returns the full
+contact when the app has `READ_CONTACTS`. Pass `property` only when you
+want a single phone number, email address, or postal address and can omit
+that permission (required to target Android 17 / API 37 without a Play
+Console contacts declaration).
 
 | Param         | Type                                                                | Description                                            |
 | ------------- | ------------------------------------------------------------------- | ------------------------------------------------------ |

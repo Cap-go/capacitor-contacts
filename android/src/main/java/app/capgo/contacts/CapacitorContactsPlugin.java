@@ -469,13 +469,6 @@ public class CapacitorContactsPlugin extends Plugin {
     private PluginCall currentPickerCall;
     private String currentPickerProperty;
 
-    // Android 17 (API 37) system contact picker. Constants are inlined so the
-    // plugin still compiles against compileSdk 36.
-    private static final int ANDROID_API_17 = 37;
-    private static final String ACTION_PICK_CONTACTS = "android.provider.action.PICK_CONTACTS";
-    private static final String EXTRA_PICK_CONTACTS_REQUESTED_DATA_FIELDS = "android.provider.extra.PICK_CONTACTS_REQUESTED_DATA_FIELDS";
-    private static final String EXTRA_PICK_CONTACTS_SELECTION_LIMIT = "android.provider.extra.PICK_CONTACTS_SELECTION_LIMIT";
-
     @PluginMethod
     public void pickContact(PluginCall call) {
         launchContactPicker(call);
@@ -495,28 +488,13 @@ public class CapacitorContactsPlugin extends Plugin {
 
         currentPickerCall = call;
         currentPickerProperty = property;
-        startActivityForResult(call, createPickIntent(call, property), PICK_CONTACT_REQUEST);
+        startActivityForResult(call, createPickIntent(property), PICK_CONTACT_REQUEST);
     }
 
-    private Intent createPickIntent(PluginCall call, String property) {
+    private Intent createPickIntent(String property) {
         if (property != null) {
             return new Intent(Intent.ACTION_PICK, contentUriForProperty(property));
         }
-
-        if (android.os.Build.VERSION.SDK_INT >= ANDROID_API_17) {
-            Intent intent = new Intent(ACTION_PICK_CONTACTS);
-            intent.putStringArrayListExtra(EXTRA_PICK_CONTACTS_REQUESTED_DATA_FIELDS, requestedMimeTypes(call));
-            boolean multiple = Boolean.TRUE.equals(call.getBoolean("multiple", false));
-            if (!multiple) {
-                intent.putExtra(EXTRA_PICK_CONTACTS_SELECTION_LIMIT, 1);
-            } else {
-                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-            }
-            if (intent.resolveActivity(getContext().getPackageManager()) != null) {
-                return intent;
-            }
-        }
-
         return new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
     }
 
@@ -531,23 +509,6 @@ public class CapacitorContactsPlugin extends Plugin {
             return ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_URI;
         }
         return null;
-    }
-
-    private ArrayList<String> requestedMimeTypes(PluginCall call) {
-        Set<String> fields = parseFieldsArray(call);
-        if (fields != null) {
-            return new ArrayList<>(getMimeTypesForFields(fields));
-        }
-        ArrayList<String> mimeTypes = new ArrayList<>();
-        mimeTypes.add(ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE);
-        mimeTypes.add(ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
-        mimeTypes.add(ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE);
-        mimeTypes.add(ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE);
-        mimeTypes.add(ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE);
-        mimeTypes.add(ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE);
-        mimeTypes.add(ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE);
-        mimeTypes.add(ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE);
-        return mimeTypes;
     }
 
     @PluginMethod
@@ -652,12 +613,7 @@ public class CapacitorContactsPlugin extends Plugin {
         String property = currentPickerProperty;
         currentPickerProperty = null;
 
-        if (isSessionUri(uri)) {
-            call.resolve(new JSObject().put("contacts", contactsFromSessionUri(uri, fieldsForPickedContact(call))));
-            return;
-        }
-
-        if (property != null || isDataRowUri(uri)) {
+        if (property != null) {
             JSObject contact = contactFromDataRowUri(uri, property);
             JSArray contacts = new JSArray();
             if (contact != null) {
@@ -667,7 +623,7 @@ public class CapacitorContactsPlugin extends Plugin {
             return;
         }
 
-        call.resolve(new JSObject().put("contacts", contactsFromContactUri(uri, fieldsForPickedContact(call))));
+        call.resolve(new JSObject().put("contacts", contactsFromFullPick(uri, fieldsForPickedContact(call))));
     }
 
     private Set<String> fieldsForPickedContact(PluginCall call) {
@@ -686,9 +642,72 @@ public class CapacitorContactsPlugin extends Plugin {
         return authority != null && authority.contains("picker");
     }
 
-    private boolean isDataRowUri(Uri uri) {
-        List<String> segments = uri.getPathSegments();
-        return segments != null && !segments.isEmpty() && "data".equals(segments.get(0));
+    private JSArray contactsFromFullPick(Uri uri, Set<String> fields) {
+        JSArray contacts = new JSArray();
+        List<String> ids = contactIdsFromPickerUri(uri);
+
+        if (hasReadPermission()) {
+            for (String contactId : ids) {
+                try {
+                    ContactBuilder builder = fetchContact(contactId, fields);
+                    if (builder != null) {
+                        if (builder.displayName == null) {
+                            builder.displayName = builder.fullName;
+                        }
+                        contacts.put(builder.toJSObject(fields));
+                    }
+                } catch (Exception ex) {
+                    android.util.Log.w("CapacitorContacts", "Failed to fetch picked contact", ex);
+                }
+            }
+        }
+
+        if (contacts.length() > 0) {
+            return contacts;
+        }
+
+        if (isSessionUri(uri)) {
+            return contactsFromSessionUri(uri, fields);
+        }
+
+        if (!ids.isEmpty()) {
+            ContactBuilder builder = new ContactBuilder(ids.get(0));
+            String displayName = resolveDisplayNameFromUri(uri);
+            builder.displayName = displayName;
+            builder.fullName = displayName;
+            Set<String> thinFields = new HashSet<>();
+            thinFields.add("id");
+            thinFields.add("displayName");
+            contacts.put(builder.toJSObject(thinFields));
+        }
+        return contacts;
+    }
+
+    private List<String> contactIdsFromPickerUri(Uri uri) {
+        List<String> ids = new ArrayList<>();
+        if (isSessionUri(uri)) {
+            Set<String> seen = new HashSet<>();
+            ContentResolver resolver = getContext().getContentResolver();
+            try (Cursor cursor = resolver.query(uri, null, null, null, null)) {
+                if (cursor != null) {
+                    while (cursor.moveToNext()) {
+                        String contactId = getStringColumn(cursor, ContactsContract.Data.CONTACT_ID);
+                        if (contactId != null && seen.add(contactId)) {
+                            ids.add(contactId);
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                android.util.Log.w("CapacitorContacts", "Failed to read picker session contact ids", ex);
+            }
+            return ids;
+        }
+
+        String contactId = getContactIdFromUri(uri);
+        if (contactId != null) {
+            ids.add(contactId);
+        }
+        return ids;
     }
 
     private JSArray contactsFromSessionUri(Uri sessionUri, Set<String> fields) {
@@ -752,40 +771,6 @@ public class CapacitorContactsPlugin extends Plugin {
             android.util.Log.w("CapacitorContacts", "Failed to read picked contact data row", ex);
             return null;
         }
-    }
-
-    private JSArray contactsFromContactUri(Uri contactUri, Set<String> fields) {
-        JSArray contacts = new JSArray();
-        String contactId = getContactIdFromUri(contactUri);
-        if (contactId == null) {
-            return contacts;
-        }
-
-        if (hasReadPermission()) {
-            try {
-                ContactBuilder builder = fetchContact(contactId, fields);
-                if (builder != null) {
-                    if (builder.displayName == null) {
-                        builder.displayName = builder.fullName;
-                    }
-                    contacts.put(builder.toJSObject(fields));
-                }
-                return contacts;
-            } catch (Exception ex) {
-                android.util.Log.w("CapacitorContacts", "Failed to fetch picked contact", ex);
-            }
-        }
-
-        ContactBuilder builder = new ContactBuilder(contactId);
-        String displayName = resolveDisplayNameFromUri(contactUri);
-        builder.displayName = displayName;
-        builder.fullName = displayName;
-        Set<String> thinFields = new HashSet<>();
-        thinFields.add("id");
-        thinFields.add("displayName");
-        thinFields.add("fullName");
-        contacts.put(builder.toJSObject(thinFields));
-        return contacts;
     }
 
     private String resolveDisplayNameFromUri(Uri contactUri) {
