@@ -409,6 +409,7 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
         if let property, let keys = displayedPropertyKeys(for: property) {
             picker.displayedPropertyKeys = keys
             picker.predicateForEnablingContact = predicateForProperty(property)
+            picker.predicateForSelectionOfProperty = predicateForSelectionOfProperty(property)
             picker.delegate = propertyPickerDelegate(call)
             return picker
         }
@@ -477,6 +478,19 @@ public class CapacitorContactsPlugin: CAPPlugin, CAPBridgedPlugin {
             return nameKeys + [CNContactEmailAddressesKey]
         case "postalAddress":
             return nameKeys + [CNContactPostalAddressesKey]
+        default:
+            return nil
+        }
+    }
+
+    private func predicateForSelectionOfProperty(_ property: String) -> NSPredicate? {
+        switch property {
+        case "phoneNumber":
+            return NSPredicate(format: "key == %@", CNContactPhoneNumbersKey)
+        case "emailAddress":
+            return NSPredicate(format: "key == %@", CNContactEmailAddressesKey)
+        case "postalAddress":
+            return NSPredicate(format: "key == %@", CNContactPostalAddressesKey)
         default:
             return nil
         }

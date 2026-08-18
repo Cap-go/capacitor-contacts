@@ -653,7 +653,7 @@ public class CapacitorContactsPlugin extends Plugin {
         currentPickerProperty = null;
 
         if (isSessionUri(uri)) {
-            call.resolve(new JSObject().put("contacts", contactsFromSessionUri(uri)));
+            call.resolve(new JSObject().put("contacts", contactsFromSessionUri(uri, parseFieldsArray(call))));
             return;
         }
 
@@ -680,7 +680,7 @@ public class CapacitorContactsPlugin extends Plugin {
         return segments != null && !segments.isEmpty() && "data".equals(segments.get(0));
     }
 
-    private JSArray contactsFromSessionUri(Uri sessionUri) {
+    private JSArray contactsFromSessionUri(Uri sessionUri, Set<String> fields) {
         JSArray contacts = new JSArray();
         Map<String, ContactBuilder> builders = new java.util.LinkedHashMap<>();
         ContentResolver resolver = getContext().getContentResolver();
@@ -707,7 +707,7 @@ public class CapacitorContactsPlugin extends Plugin {
         }
 
         for (ContactBuilder builder : builders.values()) {
-            contacts.put(builder.toJSObject(null));
+            contacts.put(builder.toJSObject(fields));
         }
         return contacts;
     }
@@ -729,7 +729,6 @@ public class CapacitorContactsPlugin extends Plugin {
             Set<String> fields = new HashSet<>();
             fields.add("id");
             fields.add("displayName");
-            fields.add("fullName");
             if ("emailAddress".equals(property)) {
                 fields.add("emailAddresses");
             } else if ("postalAddress".equals(property)) {
