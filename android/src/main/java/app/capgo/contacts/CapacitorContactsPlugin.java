@@ -646,17 +646,19 @@ public class CapacitorContactsPlugin extends Plugin {
         JSArray contacts = new JSArray();
         List<String> ids = contactIdsFromPickerUri(uri);
 
-        for (String contactId : ids) {
-            try {
-                ContactBuilder builder = fetchContact(contactId, fields);
-                if (builder != null) {
-                    if (builder.displayName == null) {
-                        builder.displayName = builder.fullName;
+        if (hasReadPermission()) {
+            for (String contactId : ids) {
+                try {
+                    ContactBuilder builder = fetchContact(contactId, fields);
+                    if (builder != null) {
+                        if (builder.displayName == null) {
+                            builder.displayName = builder.fullName;
+                        }
+                        contacts.put(builder.toJSObject(fields));
                     }
-                    contacts.put(builder.toJSObject(fields));
+                } catch (Exception ex) {
+                    android.util.Log.w("CapacitorContacts", "Failed to fetch picked contact", ex);
                 }
-            } catch (Exception ex) {
-                android.util.Log.w("CapacitorContacts", "Failed to fetch picked contact", ex);
             }
         }
 
@@ -676,7 +678,6 @@ public class CapacitorContactsPlugin extends Plugin {
             Set<String> thinFields = new HashSet<>();
             thinFields.add("id");
             thinFields.add("displayName");
-            thinFields.add("fullName");
             contacts.put(builder.toJSObject(thinFields));
         }
         return contacts;
