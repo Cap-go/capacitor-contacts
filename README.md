@@ -1,13 +1,28 @@
 # @capgo/capacitor-contacts
-<a href="https://capgo.app/"><img src="https://capgo.app/readme-banner.svg?repo=Cap-go/capacitor-contacts" alt="Capgo - Instant updates for Capacitor" /></a>
+
+Read, create, update and delete device contacts and groups from your Capacitor app, or open the native contact screens. One API for iOS and Android.
+
+<a href="https://capgo.app/?ref=plugin_contacts"><img src="https://capgo.app/readme-banner.svg?repo=Cap-go/capacitor-contacts" alt="Capgo - Instant updates for Capacitor" /></a>
 
 <div align="center">
-  <h2><a href="https://capgo.app/?ref=plugin_contacts"> ➡️ Get Instant updates for your App with Capgo</a></h2>
-  <h2><a href="https://capgo.app/consulting/?ref=plugin_contacts"> Missing a feature? We’ll build the plugin for you 💪</a></h2>
+  <p><b>Capgo</b>: open-source live updates for Ionic and Capacitor apps. Ship OTA fixes and features instantly, without waiting for app store review.</p>
+  <h2><a href="https://capgo.app/register/?ref=plugin_contacts">➡️ Get started for free</a></h2>
+  <p>14-day unlimited free trial. No credit card required</p>
+  <p><a href="https://capgo.app/consulting/?ref=plugin_contacts">Missing a feature? We'll build the plugin for you 💪</a></p>
 </div>
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Cap-go/capacitor-contacts/main/assets/github-social-preview.png" alt="@capgo/capacitor-contacts for Capacitor apps" width="300" />
+</p>
 
-Manage device contacts across iOS, Android, and the Web with a unified Capacitor API.
+## Key features
+
+- **Read contacts**: `getContacts()`, `getContactById()` and `countContacts()`.
+- **Write contacts**: `createContact()`, `updateContactById()` and `deleteContactById()`.
+- **Native screens**: `displayContactById()`, `displayCreateContact()` and `displayUpdateContactById()` open the system UI.
+- **Groups and accounts**: `getGroups()`, `createGroup()`, `deleteGroupById()` and `getAccounts()`.
+- **Permissions**: `checkPermissions()`, `requestPermissions()` and `openSettings()`.
+- **Platforms**: iOS and Android. iOS uses the Contacts framework, Android uses `ContactsContract`. Not available on web.
 
 ## Documentation
 
