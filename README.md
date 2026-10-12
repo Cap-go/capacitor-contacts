@@ -2,7 +2,7 @@
 
 Read, create, update and delete device contacts and groups from your Capacitor app, or open the native contact screens. One API for iOS and Android.
 
-<a href="https://capgo.app/?ref=plugin_contacts"><img src="https://capgo.app/readme-banner.svg?repo=Cap-go/capacitor-contacts" alt="Capgo - Instant updates for Capacitor" /></a>
+<a href="https://capgo.app/?ref=plugin_contacts"><img src="https://capgo.app/readme-banner.svg?repo=Cap-go/capacitor-contacts" alt="Capgo - Build Capacitor apps with AI, ship updates instantly" /></a>
 
 <div align="center">
   <p><b>Capgo</b>: push fixes to your Capacitor users in minutes, build signed iOS and Android apps without a Mac, and roll back in one click.</p>
@@ -10,6 +10,8 @@ Read, create, update and delete device contacts and groups from your Capacitor a
   <p>14-day unlimited free trial. No credit card required</p>
   <p><a href="https://capgo.app/consulting/?ref=plugin_contacts">Missing a feature? We'll build the plugin for you 💪</a></p>
 </div>
+
+> 🤖 **Building with an AI coding agent?** Install [Capgo skills](https://capgo.app/skills/?ref=plugin_contacts) so Claude Code, Codex, Cursor, Copilot, or Gemini CLI know how to install and use `@capgo/capacitor-contacts` in your Capacitor app: `npx skills add Cap-go/capgo-skills`. Then ask your agent: *"Add @capgo/capacitor-contacts to my Capacitor app and wire it up."* [Agent setup guides](https://capgo.app/agents/?ref=plugin_contacts) · [Hosted MCP](https://capgo.app/docs/ai/mcp/?ref=plugin_contacts)
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/Cap-go/capacitor-contacts/main/assets/github-social-preview.png" alt="@capgo/capacitor-contacts for Capacitor apps" width="300" />
