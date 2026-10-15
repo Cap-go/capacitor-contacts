@@ -553,9 +553,7 @@ public class CapacitorContactsPlugin extends Plugin {
         }
 
         try {
-            Uri contactUri = ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, Long.parseLong(contactId));
-            Intent intent = new Intent(Intent.ACTION_EDIT, contactUri);
-            intent.setType(ContactsContract.Contacts.CONTENT_ITEM_TYPE);
+            Intent intent = ContactIntents.createEditContactIntent(Long.parseLong(contactId));
             getContext().startActivity(intent);
             call.resolve();
         } catch (Exception ex) {
