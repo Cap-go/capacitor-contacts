@@ -443,11 +443,9 @@ public class CapacitorContactsPlugin extends Plugin {
 
         try {
             ContentResolver resolver = getContext().getContentResolver();
-            int rowsDeleted = resolver.delete(
-                ContactsContract.Groups.CONTENT_URI,
-                ContactsContract.Groups._ID + " = ?",
-                new String[] { groupId }
-            );
+            int rowsDeleted = resolver.delete(ContactsContract.Groups.CONTENT_URI, ContactsContract.Groups._ID + " = ?", new String[] {
+                groupId
+            });
 
             if (rowsDeleted > 0) {
                 call.resolve();
