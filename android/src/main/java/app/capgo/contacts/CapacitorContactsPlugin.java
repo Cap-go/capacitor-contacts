@@ -481,34 +481,20 @@ public class CapacitorContactsPlugin extends Plugin {
 
     private void launchContactPicker(PluginCall call) {
         String property = call.getString("property");
-        if (property != null && contentUriForProperty(property) == null) {
+        if (property != null && !ContactIntents.isValidPickProperty(property)) {
             call.reject("Invalid property. Use phoneNumber, emailAddress, or postalAddress.");
+            return;
+        }
+
+        Intent pickIntent = ContactIntents.resolvePickContactIntent(getContext(), property);
+        if (pickIntent == null) {
+            call.reject("No activity available to pick a contact.");
             return;
         }
 
         currentPickerCall = call;
         currentPickerProperty = property;
-        startActivityForResult(call, createPickIntent(property), PICK_CONTACT_REQUEST);
-    }
-
-    private Intent createPickIntent(String property) {
-        if (property != null) {
-            return new Intent(Intent.ACTION_PICK, contentUriForProperty(property));
-        }
-        return new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
-    }
-
-    private Uri contentUriForProperty(String property) {
-        if ("phoneNumber".equals(property)) {
-            return ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
-        }
-        if ("emailAddress".equals(property)) {
-            return ContactsContract.CommonDataKinds.Email.CONTENT_URI;
-        }
-        if ("postalAddress".equals(property)) {
-            return ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_URI;
-        }
-        return null;
+        startActivityForResult(call, pickIntent, PICK_CONTACT_REQUEST);
     }
 
     @PluginMethod
